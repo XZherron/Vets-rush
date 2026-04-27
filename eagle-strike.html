@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EAGLE STRIKE 🦅 | VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(180deg, #0f172a 0%, #1e2937 100%);
+            color: white;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            background: #0f172a;
+            box-shadow: 0 0 0 12px #1e2937;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 520px;
+            display: block;
+            background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%);
+            touch-action: manipulation;
+        }
+        
+        .countdown {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 0 30px rgba(255,255,255,0.8);
+            z-index: 100;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="game-container">
+        <!-- Header -->
+        <div class="bg-slate-900 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-fighter-jet text-white text-2xl"></i>
+                </div>
+                <div>
+                    <div class="font-bold text-xl">EAGLE STRIKE</div>
+                    <div class="text-xs text-orange-400">VETS RUSH • SLOWER MODE</div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-slate-400">HIGH SCORE</div>
+                <div id="highScore" class="font-mono font-bold text-lg text-amber-400">18,750</div>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <div class="relative">
+            <canvas id="gameCanvas" width="420" height="520"></canvas>
+            
+            <!-- Countdown -->
+            <div id="countdown" class="countdown hidden">3</div>
+            
+            <!-- Start Screen -->
+            <div id="startScreen" class="absolute inset-0 bg-black/80 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">🦅</div>
+                    <div class="text-4xl font-bold mb-2">EAGLE STRIKE</div>
+                    <div class="text-slate-400 mb-8">Protect the skies • Earn rewards</div>
+                    
+                    <button onclick="startMission()" 
+                            class="bg-orange-500 hover:bg-orange-600 transition-colors text-white font-bold py-4 px-12 rounded-2xl text-xl shadow-lg">
+                        START MISSION
+                    </button>
+                    
+                    <div class="mt-6 text-xs text-slate-500">Tap & hold to climb • Release to dive</div>
+                </div>
+            </div>
+            
+            <!-- Game Over Screen -->
+            <div id="gameOverScreen" class="absolute inset-0 bg-black/90 hidden flex items-center justify-center">
+                <div class="text-center p-6 w-full max-w-[300px]">
+                    <div class="text-6xl mb-4">💥</div>
+                    <div class="text-3xl font-bold mb-2">MISSION FAILED</div>
+                    <div class="text-slate-400 mb-6">Your F-16 was shot down</div>
+                    
+                    <div class="bg-slate-800 rounded-2xl p-4 mb-6 text-left">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-slate-400">DISTANCE</span>
+                            <span id="finalDistance" class="font-bold">1,240m</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-slate-400">MEDALS COLLECTED</span>
+                            <span id="finalMedals" class="font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm text-slate-400">ENEMIES DESTROYED</span>
+                            <span id="finalEnemies" class="font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t border-slate-700">
+                            <span class="text-sm text-emerald-400">REWARDS</span>
+                            <span id="finalRewards" class="font-bold text-emerald-400">+378 🪙 +1 ⭐</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="claimRewards()" 
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl mb-3">
+                        CLAIM REWARDS
+                    </button>
+                    
+                    <button onclick="returnToVetsRush()" 
+                            class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-2xl">
+                        RETURN TO VETS RUSH
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let canvas, ctx;
+        let player = { x: 80, y: 260, vy: 0, shield: 0 };
+        let missiles = [];
+        let enemies = [];
+        let powerups = [];
+        let particles = [];
+        let score = 0;
+        let distance = 0;
+        let lives = 3;
+        let gameRunning = false;
+        let lastEnemySpawn = 0;
+        let lastMissile = 0;
+        let earnedHeroCoins = 0;
+        let earnedStars = 0;
+
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Load high score
+            const highScore = localStorage.getItem('eagleStrikeHighScore') || 18750;
+            document.getElementById('highScore').textContent = parseInt(highScore).toLocaleString();
+            
+            // Start game loop
+            setInterval(gameLoop, 1000 / 60);
+            
+            // Touch controls
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning) player.vy = -4;
+            });
+            
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (gameRunning) player.vy = 3;
+            });
+            
+            // Keyboard controls (for testing)
+            document.addEventListener('keydown', (e) => {
+                if (e.key === ' ' && gameRunning) {
+                    e.preventDefault();
+                    player.vy = -4;
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                if (e.key === ' ' && gameRunning) {
+                    player.vy = 3;
+                }
+            });
+        }
+
+        function startMission() {
+            document.getElementById('startScreen').classList.add('hidden');
+            resetGame();
+            gameRunning = true;
+            
+            // Countdown
+            const countdownEl = document.getElementById('countdown');
+            countdownEl.classList.remove('hidden');
+            countdownEl.textContent = '3';
+            
+            let count = 3;
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownEl.textContent = count;
+                } else {
+                    countdownEl.classList.add('hidden');
+                    clearInterval(countdownInterval);
+                    
+                    // Start with shield
+                    player.shield = 270; // ~4.5 seconds at 60fps
+                }
+            }, 800);
+        }
+
+        function resetGame() {
+            player = { x: 80, y: 260, vy: 0, shield: 0 };
+            missiles = [];
+            enemies = [];
+            powerups = [];
+            particles = [];
+            score = 0;
+            distance = 0;
+            lives = 3;
+            earnedHeroCoins = 0;
+            earnedStars = 0;
+            lastEnemySpawn = Date.now();
+            lastMissile = Date.now();
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Background
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw player (F-16)
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // F-16 body
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 28, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Wings
+            ctx.fillStyle = '#475569';
+            ctx.beginPath();
+            ctx.moveTo(-10, 0);
+            ctx.lineTo(-18, -22);
+            ctx.lineTo(-18, 22);
+            ctx.fill();
+            
+            // Cockpit
+            ctx.fillStyle = '#1e40af';
+            ctx.beginPath();
+            ctx.ellipse(8, 0, 8, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Afterburner
+            if (player.vy < 0) {
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.ellipse(-32, 0, 6, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Shield
+            if (player.shield > 0) {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 0, 38, 0, Math.PI * 2);
+                ctx.stroke();
+                player.shield--;
+            }
+            
+            ctx.restore();
+            
+            // Update player
+            player.y += player.vy;
+            player.y = Math.max(30, Math.min(490, player.y));
+            
+            // Auto-fire missiles
+            if (Date.now() - lastMissile > 380) {
+                missiles.push({ x: player.x + 30, y: player.y, vx: 8 });
+                lastMissile = Date.now();
+            }
+            
+            // Update and draw missiles
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                const m = missiles[i];
+                m.x += m.vx;
+                
+                ctx.fillStyle = '#f97316';
+                ctx.fillRect(m.x - 8, m.y - 2, 16, 4);
+                
+                if (m.x > canvas.width) missiles.splice(i, 1);
+            }
+            
+            // Spawn enemies
+            if (Date.now() - lastEnemySpawn > 1150) {
+                const type = Math.random();
+                if (type < 0.4) {
+                    enemies.push({ x: 450, y: Math.random() * 400 + 60, type: 'drone', vx: -2.8, vy: 0 });
+                } else if (type < 0.7) {
+                    enemies.push({ x: 450, y: Math.random() * 400 + 60, type: 'fighter', vx: -2.2, vy: 0, phase: Math.random() * Math.PI * 2 });
+                } else if (type < 0.9) {
+                    enemies.push({ x: 450, y: Math.random() * 400 + 60, type: 'helicopter', vx: -1.8, vy: 0, phase: 0 });
+                } else {
+                    enemies.push({ x: 450, y: Math.random() * 300 + 100, type: 'bomber', vx: -1.4, vy: 0, bombTimer: 0 });
+                }
+                lastEnemySpawn = Date.now();
+            }
+            
+            // Update and draw enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.x += e.vx;
+                
+                if (e.type === 'fighter') {
+                    e.phase += 0.08;
+                    e.y = 200 + Math.sin(e.phase) * 80;
+                } else if (e.type === 'helicopter') {
+                    e.phase += 0.06;
+                    e.y = 180 + Math.sin(e.phase) * 60;
+                } else if (e.type === 'bomber') {
+                    e.bombTimer++;
+                    if (e.bombTimer > 45) {
+                        e.bombTimer = 0;
+                        // Drop bomb
+                        enemies.push({ x: e.x, y: e.y + 20, type: 'bomb', vx: -1.5, vy: 2.5 });
+                    }
+                }
+                
+                // Draw enemy
+                ctx.save();
+                ctx.translate(e.x, e.y);
+                
+                if (e.type === 'drone') {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 14, 14, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#b91c1c';
+                    ctx.fillRect(-6, -6, 12, 12);
+                } else if (e.type === 'fighter') {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 22, 7, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#b91c1c';
+                    ctx.beginPath();
+                    ctx.moveTo(-8, -12);
+                    ctx.lineTo(-18, 0);
+                    ctx.lineTo(-8, 12);
+                    ctx.fill();
+                } else if (e.type === 'helicopter') {
+                    ctx.fillStyle = '#22c55e';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 18, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#15803d';
+                    ctx.fillRect(-4, -4, 8, 8);
+                } else if (e.type === 'bomber') {
+                    ctx.fillStyle = '#475569';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 26, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#334155';
+                    ctx.fillRect(-10, -6, 20, 12);
+                } else if (e.type === 'bomb') {
+                    ctx.fillStyle = '#f97316';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+                
+                // Collision with player
+                if (e.type !== 'bomb' && Math.abs(e.x - player.x) < 30 && Math.abs(e.y - player.y) < 25) {
+                    if (player.shield <= 0) {
+                        lives--;
+                        createExplosion(e.x, e.y);
+                        enemies.splice(i, 1);
+                        
+                        if (lives <= 0) {
+                            gameOver();
+                            return;
+                        }
+                    }
+                }
+                
+                // Remove off-screen
+                if (e.x < -40) enemies.splice(i, 1);
+            }
+            
+            // Update and draw powerups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                p.x -= 2;
+                
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                
+                if (p.type === 'shield') {
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#60a5fa';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (p.type === 'double') {
+                    ctx.fillStyle = '#eab308';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#fde047';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+                
+                // Collision with player
+                if (Math.abs(p.x - player.x) < 30 && Math.abs(p.y - player.y) < 25) {
+                    if (p.type === 'shield') {
+                        player.shield = 420; // 7 seconds
+                    } else if (p.type === 'double') {
+                        // Double fire for 12 seconds
+                        lastMissile = Date.now() - 200;
+                    }
+                    powerups.splice(i, 1);
+                }
+                
+                if (p.x < -30) powerups.splice(i, 1);
+            }
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life--;
+                
+                ctx.globalAlpha = p.life / 25;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            
+            // Spawn powerups occasionally
+            if (Math.random() < 0.008) {
+                powerups.push({
+                    x: 450,
+                    y: Math.random() * 350 + 80,
+                    type: Math.random() > 0.5 ? 'shield' : 'double'
+                });
+            }
+            
+            // Update distance
+            distance += 0.8;
+            score = Math.floor(distance * 1.8);
+            
+            // Draw HUD
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 18px Inter';
+            ctx.fillText('SCORE: ' + score, 20, 35);
+            ctx.fillText('DIST: ' + Math.floor(distance) + 'm', 20, 58);
+            
+            // Draw lives
+            for (let i = 0; i < lives; i++) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(canvas.width - 30 - (i * 28), 35, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw shield indicator
+            if (player.shield > 0) {
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillText('SHIELD', 20, 82);
+            }
+            
+            // Check collisions
+            for (let i = missiles.length - 1; i >= 0; i--) {
+                const m = missiles[i];
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const e = enemies[j];
+                    if (Math.abs(m.x - e.x) < 25 && Math.abs(m.y - e.y) < 20) {
+                        createExplosion(e.x, e.y);
+                        enemies.splice(j, 1);
+                        missiles.splice(i, 1);
+                        score += 50;
+                        earnedHeroCoins += 12;
+                        break;
+                    }
+                }
+            }
+            
+            // Random medal collection
+            if (Math.random() < 0.015) {
+                earnedStars += 1;
+                createExplosion(player.x + 40, player.y - 20, '#eab308');
+            }
+        }
+
+        function createExplosion(x, y, color = '#ef4444') {
+            for (let i = 0; i < 18; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    life: 25,
+                    color: color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            
+            // Calculate final rewards
+            const finalHeroCoins = Math.floor(score / 3) + earnedHeroCoins;
+            const finalStars = Math.max(1, Math.floor(earnedStars / 2));
+            
+            document.getElementById('finalDistance').textContent = Math.floor(distance) + 'm';
+            document.getElementById('finalMedals').textContent = earnedStars;
+            document.getElementById('finalEnemies').textContent = Math.floor(score / 50);
+            document.getElementById('finalRewards').innerHTML = `+${finalHeroCoins} 🪙 +${finalStars} ⭐`;
+            
+            // Store earned rewards
+            window.earnedHeroCoins = finalHeroCoins;
+            window.earnedStars = finalStars;
+            
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        function claimRewards() {
+            // Save rewards to localStorage for main game to pick up
+            const rewards = {
+                heroCoins: window.earnedHeroCoins || 0,
+                stars: window.earnedStars || 0
+            };
+            
+            localStorage.setItem('eagleStrikeRewards', JSON.stringify(rewards));
+            
+            // Return to main game
+            window.location.href = 'index.html';
+        }
+
+        function returnToVetsRush() {
+            // Save any earned rewards even if not claimed
+            const rewards = {
+                heroCoins: window.earnedHeroCoins || 0,
+                stars: window.earnedStars || 0
+            };
+            
+            localStorage.setItem('eagleStrikeRewards', JSON.stringify(rewards));
+            
+            // Return to main game
+            window.location.href = 'index.html';
+        }
+
+        // Initialize game
+        window.onload = function() {
+            init();
+        };
+    </script>
+</body>
+</html>
