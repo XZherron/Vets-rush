@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SPIN • VETS RUSH 🇺🇸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="game-state.js"></script>
+    <style>
+        body { font-family: 'Inter', system_ui, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); color: white; }
+        .slot-symbol { font-size: 3.2rem; transition: transform 0.2s ease; }
+        .reel { transition: transform 0.1s ease; }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <div class="max-w-md mx-auto">
+        <!-- Header -->
+        <div class="bg-slate-900 border-b border-slate-700 px-4 py-4 flex items-center justify-between">
+            <button onclick="goBack()" class="flex items-center gap-x-2 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-arrow-left text-xl"></i>
+                <span class="font-bold">Back to VETS RUSH</span>
+            </button>
+            <div class="font-bold text-xl text-yellow-400">SLOT MACHINE</div>
+        </div>
+
+        <!-- Bet Multipliers -->
+        <div class="px-4 pt-4">
+            <div class="flex justify-center gap-2 mb-4">
+                <button onclick="setBet(1)" id="bet-1" class="px-5 py-1.5 rounded-2xl text-sm font-bold bg-yellow-500 text-black">1×</button>
+                <button onclick="setBet(10)" id="bet-10" class="px-5 py-1.5 rounded-2xl text-sm font-bold bg-slate-700">10×</button>
+                <button onclick="setBet(25)" id="bet-25" class="px-5 py-1.5 rounded-2xl text-sm font-bold bg-slate-700">25×</button>
+                <button onclick="setBet(50)" id="bet-50" class="px-5 py-1.5 rounded-2xl text-sm font-bold bg-slate-700">50×</button>
+                <button onclick="setBet(100)" id="bet-100" class="px-5 py-1.5 rounded-2xl text-sm font-bold bg-slate-700">100×</button>
+            </div>
+        </div>
+
+        <!-- Reels -->
+        <div class="px-4">
+            <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700 mb-4">
+                <div class="flex justify-center gap-3" id="reels">
+                    <div class="slot-symbol bg-slate-800 w-16 h-16 flex items-center justify-center rounded-2xl reel" id="reel-1">🇺🇸</div>
+                    <div class="slot-symbol bg-slate-800 w-16 h-16 flex items-center justify-center rounded-2xl reel" id="reel-2">🪖</div>
+                    <div class="slot-symbol bg-slate-800 w-16 h-16 flex items-center justify-center rounded-2xl reel" id="reel-3">🎖️</div>
+                    <div class="slot-symbol bg-slate-800 w-16 h-16 flex items-center justify-center rounded-2xl reel" id="reel-4">🏠</div>
+                    <div class="slot-symbol bg-slate-800 w-16 h-16 flex items-center justify-center rounded-2xl reel" id="reel-5">🛏️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spin Button -->
+        <div class="px-4">
+            <button onclick="spinReels()" 
+                    class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-5 rounded-3xl text-2xl flex items-center justify-center gap-x-3 shadow-lg">
+                <span>SPIN FOR GLORY</span>
+                <i class="fa-solid fa-dice fa-2x"></i>
+            </button>
+            <div class="text-center text-xs text-slate-400 mt-3">Each spin costs 1 free spin • Win up to 500,000 🪙</div>
+        </div>
+
+        <!-- Win Display -->
+        <div id="win-display" class="hidden px-4 mt-4">
+            <div class="bg-emerald-900 border border-emerald-500 rounded-2xl p-4 text-center">
+                <div class="text-emerald-400 text-sm">YOU WON!</div>
+                <div id="win-amount" class="text-4xl font-bold text-emerald-400"></div>
+                <div id="win-items" class="text-sm text-emerald-300 mt-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let betMultiplier = 1;
+        let items = {};
+
+        const symbols = ['🇺🇸', '🪖', '🎖️', '🏠', '🛏️', '⭐', '🧨', '🌀', '🃏'];
+
+        function loadItems() {
+            items = window.game;
+        }
+
+        function saveItems() {
+            window.game = items; saveGame(items);
+        }
+
+        function setBet(multiplier) {
+            betMultiplier = multiplier;
+            document.querySelectorAll('[id^="bet-"]').forEach(btn => {
+                btn.classList.remove('bg-yellow-500', 'text-black');
+                btn.classList.add('bg-slate-700');
+            });
+            document.getElementById('bet-' + multiplier).classList.add('bg-yellow-500', 'text-black');
+            document.getElementById('bet-' + multiplier).classList.remove('bg-slate-700');
+        }
+
+        function spinReels() {
+            const reelEls = [
+                document.getElementById('reel-1'),
+                document.getElementById('reel-2'),
+                document.getElementById('reel-3'),
+                document.getElementById('reel-4'),
+                document.getElementById('reel-5')
+            ];
+
+            // Spin animation
+            reelEls.forEach((reel, i) => {
+                reel.style.transition = 'transform 0.8s cubic-bezier(0.23, 1, 0.32, 1)';
+                reel.style.transform = `translateY(-${Math.random() * 300 + 200}px)`;
+                
+                setTimeout(() => {
+                    reel.style.transition = 'transform 0.3s ease';
+                    reel.style.transform = 'translateY(0)';
+                    
+                    // Set final symbol
+                    const randomIndex = Math.floor(Math.random() * symbols.length);
+                    reel.innerHTML = symbols[randomIndex];
+                }, 800 + (i * 150));
+            });
+
+            // Calculate result after animation
+            setTimeout(() => {
+                calculateWin(reelEls);
+            }, 1400);
+        }
+
+        function calculateWin(reelEls) {
+            const results = reelEls.map(r => r.innerHTML);
+            
+            // Count occurrences
+            const counts = {};
+            results.forEach(s => {
+                counts[s] = (counts[s] || 0) + 1;
+            });
+
+            let totalReward = 0;
+            let rewardText = '';
+
+            Object.keys(counts).forEach(symbol => {
+                const count = counts[symbol];
+                if (count >= 2) {
+                    let multiplier = count; // 2x for pair, 3x for three, etc.
+                    let base = 100;
+                    
+                    if (symbol === '🇺🇸') base = 150;
+                    if (symbol === '🪖') base = 120;
+                    if (symbol === '🎖️') base = 180;
+                    if (symbol === '🏠') base = 200;
+                    if (symbol === '🛏️') base = 90;
+                    if (symbol === '⭐') base = 250;
+                    if (symbol === '🧨') base = 110;
+                    if (symbol === '🌀') base = 130;
+                    if (symbol === '🃏') base = 160;
+
+                    const win = Math.floor(base * multiplier * betMultiplier);
+                    totalReward += win;
+
+                    if (symbol === '⭐') items.stars += multiplier * betMultiplier;
+                    if (symbol === '🧨') items.torpedoes += multiplier * betMultiplier;
+                    if (symbol === '🌀') items.freedom += multiplier * betMultiplier;
+                    if (symbol === '🃏') items.valor += multiplier * betMultiplier;
+                    if (symbol === '🇺🇸') items.flags += multiplier * betMultiplier;
+                    if (symbol === '🪖') items.helmets += multiplier * betMultiplier;
+                    if (symbol === '🎖️') items.medals += multiplier * betMultiplier;
+                    if (symbol === '🏠') items.homes += multiplier * betMultiplier;
+                    if (symbol === '🛏️') items.beds += multiplier * betMultiplier;
+
+                    rewardText += `${count}×${symbol} = +${win} `;
+                }
+            });
+
+            if (totalReward === 0) {
+                totalReward = 50 * betMultiplier; // Small consolation prize
+                rewardText = 'Consolation +50';
+            }
+
+            items.heroCoins += totalReward;
+            saveItems();
+
+            // Show win
+            const winDiv = document.getElementById('win-display');
+            const winAmount = document.getElementById('win-amount');
+            const winItems = document.getElementById('win-items');
+
+            winAmount.innerText = `+${totalReward} 🪙`;
+            winItems.innerText = rewardText;
+            winDiv.classList.remove('hidden');
+
+            setTimeout(() => {
+                winDiv.classList.add('hidden');
+            }, 2800);
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        function init() {
+            loadItems();
+            setBet(1); // Default 1x
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
