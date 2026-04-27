@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HERO REVEAL • VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Press+Start+2P&amp;display=swap');
+        
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); 
+            color: white; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .puzzle-tile {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #334155;
+            border: 4px solid #475569;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .puzzle-tile:hover {
+            transform: scale(1.05);
+            border-color: #64748b;
+        }
+        
+        .puzzle-tile.revealed {
+            background: #1e2937;
+            border-color: #22c55e;
+            animation: revealPop 0.3s ease;
+        }
+        
+        .puzzle-tile.revealed::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 70%);
+        }
+        
+        @keyframes revealPop {
+            0% { transform: scale(0.6); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        
+        .hero-emoji {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .level-card {
+            transition: all 0.2s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        .level-card.locked {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .game-grid {
+            display: grid;
+            gap: 8px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: confetti-fall 2.5s ease-out forwards;
+            z-index: 100;
+        }
+        
+        .stat-value {
+            font-family: 'Press Start 2P', system-ui;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        
+        .cost-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: #f59e0b;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 1px 5px;
+            border-radius: 9999px;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <!-- HEADER -->
+    <div class="bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-x-3">
+            <div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-2xl">🇺🇸</div>
+            <div>
+                <div class="font-bold text-3xl tracking-tighter text-red-500">VETS RUSH</div>
+                <div class="text-[10px] text-slate-400 -mt-1">SPIN FOR HEROES • HOMES FOR VETERANS</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-x-2">
+            <div class="bg-slate-800 px-3 py-1 rounded-2xl flex items-center gap-x-2 text-sm">
+                <i class="fa-solid fa-globe text-emerald-400"></i>
+                <span class="font-mono">11.5M</span>
+            </div>
+            <button onclick="returnToBase()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-2xl flex items-center gap-x-2 text-sm">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>BASE</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- USER BAR -->
+    <div class="px-4 py-3 bg-slate-900 flex items-center justify-between border-b border-slate-700">
+        <div class="flex items-center gap-x-3">
+            <div class="w-9 h-9 bg-yellow-500 rounded-full flex items-center justify-center text-xl">🪖</div>
+            <div>
+                <div class="font-bold" id="username">PatriotVet69</div>
+                <div class="text-xs text-slate-400">LVL 14 • Rank #8,472</div>
+            </div>
+        </div>
+        <div class="text-right">
+            <div class="font-mono text-xl font-bold text-yellow-400" id="hero-coins">3,277,350</div>
+            <div class="text-[10px] text-slate-400">HERO COINS 🪙</div>
+        </div>
+    </div>
+
+    <!-- LEVEL SELECT -->
+    <div id="level-select" class="section active px-4 pt-6 pb-20">
+        <div class="max-w-md mx-auto">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-x-2 bg-purple-600/20 text-purple-400 px-4 py-1 rounded-2xl text-sm font-bold mb-3">
+                    <i class="fa-solid fa-puzzle-piece"></i>
+                    <span>HERO REVEAL</span>
+                </div>
+                <div class="text-4xl font-bold tracking-tighter">UNCOVER THE HEROES</div>
+                <div class="text-slate-400 mt-1">Tap tiles to reveal American heroes • Complete the grid for massive rewards</div>
+            </div>
+
+            <!-- LEVEL CARDS -->
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Level 1 -->
+                <div onclick="startLevel(1)" class="level-card bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-3xl p-5 cursor-pointer border border-emerald-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🟢</div>
+                                <div>
+                                    <div class="font-bold text-xl">RECRUIT</div>
+                                    <div class="text-emerald-200 text-sm">3×3 GRID • EASY</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-emerald-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">500-1.2K</div>
+                            <div class="text-[10px] text-emerald-200">+1⭐ +1🇺🇸</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 2 -->
+                <div onclick="startLevel(2)" class="level-card bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-5 cursor-pointer border border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🔵</div>
+                                <div>
+                                    <div class="font-bold text-xl">SOLDIER</div>
+                                    <div class="text-blue-200 text-sm">4×4 GRID • MEDIUM</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-blue-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">1.8K-3.5K</div>
+                            <div class="text-[10px] text-blue-200">+2⭐ +1🇺🇸 +1🎖️</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 3 -->
+                <div onclick="startLevel(3)" class="level-card bg-gradient-to-br from-orange-600 to-orange-700 rounded-3xl p-5 cursor-pointer border border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🟠</div>
+                                <div>
+                                    <div class="font-bold text-xl">VETERAN</div>
+                                    <div class="text-orange-200 text-sm">5×5 GRID • HARD</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-orange-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">4.5K-8K</div>
+                            <div class="text-[10px] text-orange-200">+3⭐ +2🇺🇸 +1🧨</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 4 -->
+                <div onclick="startLevel(4)" class="level-card bg-gradient-to-br from-purple-600 to-purple-700 rounded-3xl p-5 cursor-pointer border border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🟣</div>
+                                <div>
+                                    <div class="font-bold text-xl">LEGEND</div>
+                                    <div class="text-purple-200 text-sm">6×6 GRID • EXPERT</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-purple-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">12K-25K</div>
+                            <div class="text-[10px] text-purple-200">+5⭐ +3🇺🇸 +1🌀 +1🃏</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center text-xs text-slate-400">
+                <i class="fa-solid fa-info-circle mr-1"></i> 
+                No houses awarded in Hero Reveal • All rewards go to your main account
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="section px-4 pt-4 pb-20">
+        <div class="max-w-md mx-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="flex items-center gap-x-2">
+                        <button onclick="backToLevels()" class="text-slate-400 hover:text-white">
+                            <i class="fa-solid fa-arrow-left text-xl"></i>
+                        </button>
+                        <div>
+                            <div class="font-bold text-xl" id="level-name">RECRUIT</div>
+                            <div class="text-xs text-slate-400" id="level-subtitle">3×3 • EASY</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs text-slate-400">TILES REVEALED</div>
+                    <div class="font-mono text-2xl font-bold" id="progress">0/9</div>
+                </div>
+            </div>
+
+            <!-- Game Grid -->
+            <div id="game-grid" class="game-grid mb-4"></div>
+
+            <!-- Stats -->
+            <div class="bg-slate-900 rounded-2xl p-4 mb-4 border border-slate-700">
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                        <div class="text-xs text-slate-400">COINS FOUND</div>
+                        <div class="font-mono text-xl font-bold text-yellow-400" id="coins-found">0</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">HEROES</div>
+                        <div class="font-mono text-xl font-bold text-emerald-400" id="heroes-found">0</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">TIME</div>
+                        <div class="font-mono text-xl font-bold text-orange-400" id="timer">00:00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Houses Cost Notice + Hint -->
+            <div class="flex items-center justify-between mb-2 px-1">
+                <div class="flex items-center gap-x-2 text-sm">
+                    <span class="text-orange-400">🏠</span>
+                    <span class="font-mono text-orange-400" id="houses-left">12</span>
+                    <span class="text-xs text-slate-400">HOUSES AVAILABLE</span>
+                </div>
+                <div class="text-[10px] text-slate-400">Some tiles FREE • Paid = 🏠</div>
+            </div>
+            
+            <button onclick="useHint()" 
+                    class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sm py-3 rounded-2xl flex items-center justify-center gap-x-2 mb-3">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span>REVEAL RANDOM TILE (costs houses if paid)</span>
+            </button>
+
+            <div class="text-center text-[10px] text-slate-400">Tap tiles to reveal • Some are FREE • Paid tiles cost Houses (scales with level)</div>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="results-screen" class="section px-4 pt-6 pb-20">
+        <div class="max-w-md mx-auto text-center">
+            <div class="text-6xl mb-4">🎖️</div>
+            <div class="text-3xl font-bold mb-1">MISSION COMPLETE!</div>
+            <div class="text-slate-400 mb-6">You uncovered the heroes of freedom</div>
+
+            <div class="bg-slate-900 rounded-3xl p-6 border border-slate-700 mb-6">
+                <div class="text-xs text-slate-400 mb-3">FINAL REWARDS</div>
+                
+                <div class="space-y-3 text-left">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">🪙</span>
+                            <span>Hero Coins</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-yellow-400" id="result-coins">+1,250</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">⭐</span>
+                            <span>Stars</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-emerald-400" id="result-stars">+2</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">🇺🇸</span>
+                            <span>Flags</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-blue-400" id="result-flags">+1</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">🎖️</span>
+                            <span>Medals</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-orange-400" id="result-medals">+0</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">🧨</span>
+                            <span>Torpedoes</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-red-400" id="result-torpedoes">+0</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">🌀</span>
+                            <span>Freedom Spins</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-emerald-400" id="result-freedom">+0</div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-x-2">
+                            <span class="text-2xl">🃏</span>
+                            <span>Valor Chips</span>
+                        </div>
+                        <div class="font-mono text-xl font-bold text-purple-400" id="result-valor">+0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="playAgain()" 
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 rounded-2xl text-lg flex items-center justify-center gap-x-2">
+                    <i class="fa-solid fa-redo"></i>
+                    <span>PLAY AGAIN</span>
+                </button>
+                <button onclick="returnToBase()" 
+                        class="flex-1 border-2 border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-black font-bold py-4 rounded-2xl text-lg flex items-center justify-center gap-x-2">
+                    <i class="fa-solid fa-home"></i>
+                    <span>RETURN TO BASE</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#dc2626');
+        }
+
+        // Game State (shared with main app)
+        let gameState = {
+            heroCoins: 3277350,
+            stars: 0,
+            torpedoes: 0,
+            freedom: 0,
+            valor: 0,
+            flags: 0,
+            helmets: 0,
+            medals: 0,
+            homes: 12,
+            beds: 0
+        };
+
+        function loadGameState() {
+            const saved = localStorage.getItem('vetsRushGameState');
+            if (saved) {
+                gameState = { ...gameState, ...JSON.parse(saved) };
+            }
+            updateUI();
+        }
+
+        function saveGameState() {
+            localStorage.setItem('vetsRushGameState', JSON.stringify(gameState));
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'gameStateUpdate', state: gameState }, '*');
+            }
+        }
+
+        function updateUI() {
+            const coinsEl = document.getElementById('hero-coins');
+            if (coinsEl) coinsEl.textContent = gameState.heroCoins.toLocaleString();
+            
+            const usernameEl = document.getElementById('username');
+            if (usernameEl) usernameEl.textContent = 'PatriotVet69';
+        }
+
+        // Level Configuration
+        const levelConfig = {
+            1: { 
+                size: 3, 
+                name: "RECRUIT", 
+                subtitle: "3×3 • EASY", 
+                color: "emerald",
+                minReward: 500, 
+                maxReward: 1200,
+                baseStars: 1,
+                baseFlags: 1,
+                baseMedals: 0,
+                baseTorpedoes: 0,
+                baseFreedom: 0,
+                baseValor: 0
+            },
+            2: { 
+                size: 4, 
+                name: "SOLDIER", 
+                subtitle: "4×4 • MEDIUM", 
+                color: "blue",
+                minReward: 1800, 
+                maxReward: 3500,
+                baseStars: 2,
+                baseFlags: 1,
+                baseMedals: 1,
+                baseTorpedoes: 0,
+                baseFreedom: 0,
+                baseValor: 0
+            },
+            3: { 
+                size: 5, 
+                name: "VETERAN", 
+                subtitle: "5×5 • HARD", 
+                color: "orange",
+                minReward: 4500, 
+                maxReward: 8000,
+                baseStars: 3,
+                baseFlags: 2,
+                baseMedals: 0,
+                baseTorpedoes: 1,
+                baseFreedom: 0,
+                baseValor: 0
+            },
+            4: { 
+                size: 6, 
+                name: "LEGEND", 
+                subtitle: "6×6 • EXPERT", 
+                color: "purple",
+                minReward: 12000, 
+                maxReward: 25000,
+                baseStars: 5,
+                baseFlags: 3,
+                baseMedals: 1,
+                baseTorpedoes: 1,
+                baseFreedom: 1,
+                baseValor: 1
+            }
+        };
+
+        // NEW: Cost configuration per level
+        const levelCosts = {
+            1: { freeChance: 0.75, minCost: 1, maxCost: 1 },      // 75% free, paid = 1 house
+            2: { freeChance: 0.55, minCost: 2, maxCost: 5 },      // 55% free, paid = 2-5 houses
+            3: { freeChance: 0.35, minCost: 10, maxCost: 50 },    // 35% free, paid = 10-50 houses
+            4: { freeChance: 0.15, minCost: 100, maxCost: 10000 } // 15% free, paid = 100-10,000 houses
+        };
+
+        let currentLevel = 1;
+        let grid = [];
+        let revealed = 0;
+        let totalTiles = 0;
+        let coinsFound = 0;
+        let heroesFound = 0;
+        let startTime = 0;
+        let timerInterval = null;
+
+        function startLevel(level) {
+            currentLevel = level;
+            const config = levelConfig[level];
+            const costConfig = levelCosts[level] || levelCosts[1];
+            
+            // Hide level select, show game
+            document.getElementById('level-select').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            // Set header
+            document.getElementById('level-name').textContent = config.name;
+            document.getElementById('level-subtitle').textContent = config.subtitle;
+            document.getElementById('level-name').className = `font-bold text-xl text-${config.color}-400`;
+            
+            // Reset game state
+            revealed = 0;
+            coinsFound = 0;
+            heroesFound = 0;
+            startTime = Date.now();
+            
+            // Create grid
+            totalTiles = config.size * config.size;
+            grid = Array(config.size).fill().map(() => Array(config.size).fill(null));
+            
+            // Generate hidden content + costs
+            const tileTypes = ['🦅', '🇺🇸', '🪖', '🎖️', '⭐', '🧨', '🌀', '🃏', '💰', '🚀'];
+            
+            for (let r = 0; r < config.size; r++) {
+                for (let c = 0; c < config.size; c++) {
+                    const isPaid = Math.random() > costConfig.freeChance;
+                    const cost = isPaid 
+                        ? Math.floor(Math.random() * (costConfig.maxCost - costConfig.minCost + 1)) + costConfig.minCost 
+                        : 0;
+                    
+                    grid[r][c] = {
+                        type: tileTypes[Math.floor(Math.random() * tileTypes.length)],
+                        revealed: false,
+                        value: Math.floor(Math.random() * 3) + 1,
+                        cost: cost
+                    };
+                }
+            }
+            
+            // Render grid
+            renderGrid(config.size);
+            
+            // Reset UI
+            document.getElementById('progress').textContent = `0/${totalTiles}`;
+            document.getElementById('coins-found').textContent = '0';
+            document.getElementById('heroes-found').textContent = '0';
+            document.getElementById('timer').textContent = '00:00';
+            document.getElementById('houses-left').textContent = gameState.homes;
+            
+            // Start timer
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function renderGrid(size) {
+            const container = document.getElementById('game-grid');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            container.style.maxWidth = size === 6 ? '380px' : size === 5 ? '340px' : size === 4 ? '300px' : '240px';
+            
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const tileData = grid[r][c];
+                    const tile = document.createElement('div');
+                    tile.className = `puzzle-tile text-4xl`;
+                    if (tileData.cost > 0) {
+                        tile.style.borderColor = '#f59e0b';
+                    }
+                    tile.dataset.row = r;
+                    tile.dataset.col = c;
+                    tile.innerHTML = `<span class="hero-emoji">❓</span>`;
+                    
+                    // Add cost badge if paid
+                    if (tileData.cost > 0) {
+                        const badge = document.createElement('div');
+                        badge.className = 'cost-badge';
+                        badge.innerHTML = `🏠${tileData.cost}`;
+                        tile.appendChild(badge);
+                    }
+                    
+                    tile.onclick = () => revealTile(r, c, tile);
+                    
+                    container.appendChild(tile);
+                }
+            }
+        }
+
+        function revealTile(row, col, tileElement) {
+            if (grid[row][col].revealed) return;
+            
+            const tileData = grid[row][col];
+            
+            // COST CHECK - only if this tile has a cost
+            if (tileData.cost > 0) {
+                if (gameState.homes < tileData.cost) {
+                    alert(`You need ${tileData.cost} Houses to reveal this tile!\n\nSupport Vets at vettedpatriots.org to earn more 🏠`);
+                    return;
+                }
+                gameState.homes -= tileData.cost;
+            }
+            // else: FREE tile - no cost
+            
+            document.getElementById('houses-left').textContent = gameState.homes;
+            saveGameState();
+            
+            const config = levelConfig[currentLevel];
+            
+            // Mark as revealed
+            tileData.revealed = true;
+            revealed++;
+            
+            // Update visual
+            tileElement.classList.add('revealed');
+            tileElement.innerHTML = `<span class="hero-emoji">${tileData.type}</span>`;
+            
+            // Award instant reward
+            const coinReward = Math.floor(tileData.value * (config.minReward / totalTiles / 2));
+            coinsFound += coinReward;
+            gameState.heroCoins += coinReward;
+            
+            // Hero bonus
+            if (['🦅', '🇺🇸', '🪖', '🎖️'].includes(tileData.type)) {
+                heroesFound++;
+            }
+            
+            // Update UI
+            document.getElementById('progress').textContent = `${revealed}/${totalTiles}`;
+            document.getElementById('coins-found').textContent = coinsFound.toLocaleString();
+            document.getElementById('heroes-found').textContent = heroesFound;
+            updateUI();
+            
+            // Check if complete
+            if (revealed === totalTiles) {
+                setTimeout(() => completeLevel(), 600);
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            const timerEl = document.getElementById('timer');
+            if (timerEl) timerEl.textContent = `${minutes}:${seconds}`;
+        }
+
+        function useHint() {
+            const container = document.getElementById('game-grid');
+            const tiles = container.querySelectorAll('.puzzle-tile:not(.revealed)');
+            
+            if (tiles.length === 0) return;
+            
+            // Pick random unrevealed tile
+            const randomIndex = Math.floor(Math.random() * tiles.length);
+            const tile = tiles[randomIndex];
+            const row = parseInt(tile.dataset.row);
+            const col = parseInt(tile.dataset.col);
+            
+            // Reveal it (will handle cost automatically)
+            revealTile(row, col, tile);
+            
+            // Visual feedback for hint
+            tile.style.boxShadow = '0 0 0 4px #22c55e';
+            setTimeout(() => {
+                if (tile) tile.style.boxShadow = '0 4px 6px -1px rgb(0 0 0 / 0.3)';
+            }, 800);
+        }
+
+        function completeLevel() {
+            clearInterval(timerInterval);
+            
+            const config = levelConfig[currentLevel];
+            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+            
+            // Calculate final rewards
+            const baseCoins = Math.floor(Math.random() * (config.maxReward - config.minReward) + config.minReward);
+            const timeBonus = Math.max(0, Math.floor((120 - timeTaken) * 15));
+            const totalCoins = baseCoins + timeBonus + coinsFound;
+            
+            // Apply rewards (NO HOUSES - as requested)
+            gameState.heroCoins += totalCoins;
+            gameState.stars += config.baseStars;
+            gameState.flags += config.baseFlags;
+            gameState.medals += config.baseMedals;
+            gameState.torpedoes += config.baseTorpedoes;
+            gameState.freedom += config.baseFreedom;
+            gameState.valor += config.baseValor;
+            
+            // Save immediately
+            saveGameState();
+            
+            // Show results
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('results-screen').classList.add('active');
+            
+            // Populate results
+            document.getElementById('result-coins').textContent = `+${totalCoins.toLocaleString()}`;
+            document.getElementById('result-stars').textContent = `+${config.baseStars}`;
+            document.getElementById('result-flags').textContent = `+${config.baseFlags}`;
+            document.getElementById('result-medals').textContent = `+${config.baseMedals}`;
+            document.getElementById('result-torpedoes').textContent = `+${config.baseTorpedoes}`;
+            document.getElementById('result-freedom').textContent = `+${config.baseFreedom}`;
+            document.getElementById('result-valor').textContent = `+${config.baseValor}`;
+            
+            // Confetti for bigger levels
+            if (currentLevel >= 3) {
+                launchConfetti();
+            }
+            
+            // Update main UI just in case
+            updateUI();
+        }
+
+        function launchConfetti() {
+            const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7'];
+            for (let i = 0; i < 80; i++) {
+                setTimeout(() => {
+                    const conf = document.createElement('div');
+                    conf.className = 'confetti';
+                    conf.style.left = Math.random() * 100 + 'vw';
+                    conf.style.top = '-20px';
+                    conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    conf.style.width = (8 + Math.random() * 10) + 'px';
+                    conf.style.height = conf.style.width;
+                    conf.style.opacity = Math.random() * 0.7 + 0.3;
+                    document.body.appendChild(conf);
+                    
+                    setTimeout(() => {
+                        conf.remove();
+                    }, 2800);
+                }, i * 3);
+            }
+        }
+
+        function playAgain() {
+            document.getElementById('results-screen').classList.remove('active');
+            startLevel(currentLevel);
+        }
+
+        function backToLevels() {
+            clearInterval(timerInterval);
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('level-select').classList.add('active');
+        }
+
+        function returnToBase() {
+            clearInterval(timerInterval);
+            saveGameState();
+            
+            if (window.opener) {
+                window.close();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                const gameScreen = document.getElementById('game-screen');
+                if (gameScreen.classList.contains('active')) {
+                    const container = document.getElementById('game-grid');
+                    const unrevealed = container.querySelectorAll('.puzzle-tile:not(.revealed)');
+                    if (unrevealed.length > 0) {
+                        const random = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+                        const row = parseInt(random.dataset.row);
+                        const col = parseInt(random.dataset.col);
+                        revealTile(row, col, random);
+                    }
+                }
+            }
+            
+            if (e.key.toLowerCase() === 'h' && document.getElementById('game-screen').classList.contains('active')) {
+                useHint();
+            }
+        });
+
+        // Touch support hint
+        let touchStartTime = 0;
+        document.addEventListener('touchstart', function(e) {
+            touchStartTime = Date.now();
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            if (Date.now() - touchStartTime > 600 && document.getElementById('game-screen').classList.contains('active')) {
+                useHint();
+            }
+        });
+
+        // Initialize everything
+        function init() {
+            initTailwind();
+            loadGameState();
+            
+            document.getElementById('level-select').classList.add('active');
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('results-screen').classList.remove('active');
+            
+            const names = ['PatriotVet69', 'FreedomFighter42', 'EagleEye88', 'LibertyLover77'];
+            document.getElementById('username').textContent = names[Math.floor(Math.random() * names.length)];
+            
+            const logo = document.querySelector('.fa-globe');
+            if (logo) {
+                logo.onclick = () => {
+                    gameState.heroCoins += 1000;
+                    updateUI();
+                    saveGameState();
+                };
+            }
+            
+            console.log('%c[Hero Reveal] Updated with house costs for paid tiles + varying rewards', 'color:#22c55e');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
