@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>EAGLE STRIKE 🦅 | VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system_ui, sans-serif; background: #0f172a; color: white; }
+        .game-canvas { border: 4px solid #f59e0b; border-radius: 16px; box-shadow: 0 0 30px #f59e0b40; }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <div class="bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-x-3">
+            <div class="w-9 h-9 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl">🦅</div>
+            <div>
+                <div class="font-bold text-2xl text-orange-400">EAGLE STRIKE</div>
+                <div class="text-xs text-slate-400">SLOWER MODE • TAP &amp; HOLD TO CLIMB</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-x-2">
+            <div class="bg-slate-800 px-3 py-1 rounded-2xl text-sm flex items-center gap-x-1">
+                <span>🪙</span>
+                <span id="coins" class="font-mono font-bold">0</span>
+            </div>
+            <button onclick="exitToBase()" class="bg-slate-700 px-3 py-1.5 rounded-2xl text-sm">BASE</button>
+        </div>
+    </div>
+
+    <div class="max-w-[380px] mx-auto pt-6 px-4">
+        <div class="flex justify-between text-sm mb-2 px-1">
+            <div>Shield: <span id="shields" class="font-bold text-emerald-400">3</span> 
+                <span class="text-xs text-emerald-400">(<span id="shield-hits">3</span> hits)</span>
+            </div>
+            <div>Score: <span id="score" class="font-mono font-bold">0</span></div>
+        </div>
+        <div class="text-xs text-emerald-400 mb-1 px-1">Shield Time: <span id="shield-time">30</span>s</div>
+
+        <canvas id="canvas" width="380" height="520" class="game-canvas mx-auto bg-[#0a1625]"></canvas>
+
+        <div class="text-center mt-4">
+            <div class="text-orange-400 font-medium">TAP &amp; HOLD ANYWHERE TO CLIMB • RELEASE TO DIVE</div>
+            <div class="text-xs text-slate-400 mt-1">SLOWER MODE • Shield breaks after time OR hits taken</div>
+        </div>
+
+        <div class="flex gap-3 mt-5">
+            <button id="start" onclick="start()" class="flex-1 bg-orange-500 hover:bg-orange-600 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-x-2">
+                <i class="fa-solid fa-play"></i> <span>START MISSION</span>
+            </button>
+            <button onclick="exitToBase()" class="flex-1 bg-slate-700 hover:bg-slate-600 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-x-2">
+                <i class="fa-solid fa-home"></i> <span>ABORT</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="over" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-8 max-w-[320px] text-center">
+            <div class="text-6xl mb-3">🦅</div>
+            <div class="text-2xl font-bold mb-2">MISSION COMPLETE</div>
+            <div class="text-4xl font-mono font-bold text-orange-400 mb-4" id="final-score">0</div>
+            
+            <div class="text-sm text-slate-400 mb-4">Distance: <span id="final-dist">0</span>m</div>
+            
+            <div class="flex gap-3">
+                <button onclick="restart()" class="flex-1 bg-orange-500 hover:bg-orange-600 py-3 rounded-2xl font-bold">FLY AGAIN</button>
+                <button onclick="exitToBase()" class="flex-1 bg-slate-700 hover:bg-slate-600 py-3 rounded-2xl font-bold">RETURN TO BASE</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load shared game state + purchased upgrades
+        let gameState = JSON.parse(localStorage.getItem('vetsRushGameState')) || {
+            heroCoins: 3277350, stars: 0, flags: 0, homes: 12, medals: 0,
+            torpedoes: 0, freedom: 0, valor: 0, shields: 0,
+            extraLives: 0, shieldDuration: 0, reinforcedShield: 0
+        };
+
+        function saveGameState() {
+            localStorage.setItem('vetsRushGameState', JSON.stringify(gameState));
+        }
+
+        // Apply purchased upgrades
+        let extraLives = gameState.extraLives || 0;
+        let shieldDurationBonus = gameState.shieldDuration || 0;
+        let reinforcedBonus = gameState.reinforcedShield || 0;
+
+        let c = document.getElementById('canvas');
+        let ctx = c.getContext('2d');
+        let eagle = {x: 75, y: 260, vy: 0};
+        let obs = [], st = [], parts = [];
+        let score = 0, dist = 0, shields = 3, shieldHits = 3, shieldTimeLeft = 30, climb = false, run = false, fr = 0;
+        let shieldTimer = null;
+
+        function updateUI() {
+            document.getElementById('coins').innerText = gameState.heroCoins.toLocaleString();
+            document.getElementById('shields').innerText = shields;
+            document.getElementById('shield-hits').innerText = shieldHits;
+            document.getElementById('shield-time').innerText = Math.max(0, Math.floor(shieldTimeLeft));
+        }
+
+        function createPart(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                parts.push({x, y, vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, life: 20, color});
+            }
+        }
+
+        function reset() {
+            eagle = {x: 75, y: 260, vy: 0};
+            obs = [];
+            st = [];
+            parts = [];
+            score = 0;
+            dist = 0;
+            
+            // Apply upgrades
+            shields = 1 + (extraLives || 0);           // base 1 + extra lives
+            shieldHits = 3 + (reinforcedBonus || 0);   // base 3 hits + purchased
+            shieldTimeLeft = 30 + (shieldDurationBonus * 1); // 30s + 1s per purchase
+            
+            climb = false;
+            run = false;
+            fr = 0;
+            
+            if (shieldTimer) clearInterval(shieldTimer);
+            
+            document.getElementById('score').innerText = '0';
+            document.getElementById('shields').innerText = shields;
+            document.getElementById('shield-hits').innerText = shieldHits;
+            document.getElementById('shield-time').innerText = Math.floor(shieldTimeLeft);
+            document.getElementById('over').classList.add('hidden');
+            document.getElementById('start').innerHTML = `<i class="fa-solid fa-play"></i> <span>START MISSION</span>`;
+            document.getElementById('start').disabled = false;
+        }
+
+        function startShieldTimer() {
+            if (shieldTimer) clearInterval(shieldTimer);
+            shieldTimer = setInterval(() => {
+                if (!run) {
+                    clearInterval(shieldTimer);
+                    return;
+                }
+                shieldTimeLeft -= 0.1;
+                document.getElementById('shield-time').innerText = Math.max(0, Math.floor(shieldTimeLeft));
+                
+                if (shieldTimeLeft <= 0) {
+                    clearInterval(shieldTimer);
+                    run = false;
+                    endGame();
+                }
+            }, 100);
+        }
+
+        function start() {
+            if (run) return;
+            reset();
+            run = true;
+            document.getElementById('start').innerHTML = `<i class="fa-solid fa-plane"></i> <span>IN FLIGHT</span>`;
+            document.getElementById('start').disabled = true;
+
+            // Countdown
+            let n = 3;
+            const el = document.createElement('div');
+            el.style.cssText = 'position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);font-size:80px;font-weight:900;color:#f59e0b;';
+            el.innerText = n;
+            c.parentElement.appendChild(el);
+            
+            const iv = setInterval(() => {
+                n--;
+                if (n > 0) el.innerText = n;
+                else {
+                    clearInterval(iv);
+                    el.remove();
+                    startShieldTimer();
+                    requestAnimationFrame(loop);
+                }
+            }, 650);
+        }
+
+        function loop() {
+            if (!run) return;
+
+            ctx.fillStyle = '#0a1625';
+            ctx.fillRect(0, 0, 380, 520);
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(0, 0, 380, 260);
+
+            // Eagle (slower mode)
+            if (climb) eagle.vy -= 0.9;
+            else eagle.vy += 0.45;
+            eagle.vy = Math.max(Math.min(eagle.vy, 6.5), -6.5);
+            eagle.y += eagle.vy;
+
+            if (eagle.y < 22) { eagle.y = 22; eagle.vy = 0; }
+            if (eagle.y > 498) { eagle.y = 498; eagle.vy = 0; }
+
+            // Draw Eagle
+            ctx.save();
+            ctx.translate(eagle.x, eagle.y);
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 17, 8, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(13, -1, 5.5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath();
+            ctx.moveTo(17, -1);
+            ctx.lineTo(23, 1);
+            ctx.lineTo(17, 2);
+            ctx.fill();
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(15, -2, 2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+
+            // Obstacles
+            for (let i = obs.length-1; i>=0; i--) {
+                const o = obs[i];
+                o.x -= 2.6;
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(o.x, o.y, 36, 26);
+
+                if (eagle.x + 15 > o.x && eagle.x < o.x + 36 && eagle.y + 7 > o.y && eagle.y < o.y + 26) {
+                    // Shield hit
+                    shieldHits--;
+                    document.getElementById('shield-hits').innerText = shieldHits;
+                    createPart(eagle.x, eagle.y, '#ef4444');
+                    obs.splice(i, 1);
+                    
+                    if (shieldHits <= 0) {
+                        run = false;
+                        clearInterval(shieldTimer);
+                        endGame();
+                        return;
+                    }
+                }
+            }
+
+            // Stars
+            for (let i = st.length-1; i>=0; i--) {
+                const s = st[i];
+                s.x -= 2.6;
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, 8, 0, Math.PI*2);
+                ctx.fill();
+                
+                if (eagle.x + 15 > s.x - 8 && eagle.x < s.x + 8 && eagle.y + 7 > s.y - 8 && eagle.y < s.y + 8) {
+                    score += 150;
+                    document.getElementById('score').innerText = score;
+                    createPart(s.x, s.y, '#fbbf24');
+                    st.splice(i, 1);
+                }
+            }
+
+            // Particles
+            for (let i = parts.length-1; i>=0; i--) {
+                const p = parts[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                ctx.globalAlpha = p.life / 20;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = 1;
+                if (p.life <= 0) parts.splice(i, 1);
+            }
+
+            // Spawn
+            fr++;
+            if (fr % 38 === 0 && Math.random() < 0.75) {
+                obs.push({x: 380, y: Math.random()*380 + 60});
+            }
+            if (fr % 52 === 0 && Math.random() < 0.6) {
+                st.push({x: 380, y: Math.random()*380 + 60});
+            }
+
+            dist += 0.8;
+            updateUI();
+
+            requestAnimationFrame(loop);
+        }
+
+        function endGame() {
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-dist').innerText = Math.floor(dist);
+            
+            // Reward based on score
+            let reward = Math.floor(score / 10) * 10;
+            if (reward < 150) reward = 150;
+            
+            gameState.heroCoins += reward;
+            if (score > 8000) gameState.stars = (gameState.stars || 0) + 1;
+            if (score > 18000) gameState.medals = (gameState.medals || 0) + 1;
+            
+            saveGameState();
+            
+            document.getElementById('over').classList.remove('hidden');
+        }
+
+        function restart() {
+            document.getElementById('over').classList.add('hidden');
+            start();
+        }
+
+        function exitToBase() {
+            saveGameState();
+            window.close();
+        }
+
+        // Touch / Mouse controls
+        c.addEventListener('mousedown', () => climb = true);
+        c.addEventListener('mouseup', () => climb = false);
+        c.addEventListener('mouseleave', () => climb = false);
+        c.addEventListener('touchstart', (e) => { e.preventDefault(); climb = true; });
+        c.addEventListener('touchend', () => climb = false);
+
+        // Keyboard (Space = climb)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' && run) { e.preventDefault(); climb = true; }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === ' ' && run) climb = false;
+        });
+
+        // Init
+        updateUI();
+        reset();
+    </script>
+</body>
+</html>
