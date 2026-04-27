@@ -835,34 +835,37 @@
         }
         
         function endGame() {
-            gameState = 'gameover';
-            
-            const finalDistanceEl = document.getElementById('finalDistance');
-            const finalMedalsEl = document.getElementById('finalMedals');
-            const finalKillsEl = document.getElementById('finalKills');
-            const rewardCoinsEl = document.getElementById('rewardCoins');
-            const rewardStarsEl = document.getElementById('rewardStars');
-            
-            finalDistanceEl.textContent = Math.floor(distance) + 'm';
-            finalMedalsEl.textContent = medals;
-            finalKillsEl.textContent = Math.floor(score / 85);
-            
-            const coinsEarned = Math.floor(score * 0.8) + (medals * 120);
-            const starsEarned = Math.max(1, Math.floor(medals / 2));
-            
-            rewardCoinsEl.textContent = coinsEarned;
-            rewardStarsEl.textContent = starsEarned;
-            
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('eagleHighScore', highScore);
-                document.getElementById('highScore').textContent = highScore.toLocaleString();
-            }
-            
-            document.getElementById('gameOverScreen').classList.remove('hidden');
-            
-            window.pendingRewards = { coins: coinsEarned, stars: starsEarned };
-        }
+    gameState = 'gameover';
+    
+    const finalDistanceEl = document.getElementById('finalDistance');
+    const finalMedalsEl = document.getElementById('finalMedals');
+    const finalKillsEl = document.getElementById('finalKills');
+    const rewardCoinsEl = document.getElementById('rewardCoins');
+    const rewardStarsEl = document.getElementById('rewardStars');
+    
+    finalDistanceEl.textContent = Math.floor(distance) + 'm';
+    finalMedalsEl.textContent = medals;
+    finalKillsEl.textContent = Math.floor(score / 85);
+    
+    const coinsEarned = Math.floor(score * 0.8) + (medals * 120);
+    const starsEarned = Math.max(1, Math.floor(medals / 2));
+    
+    rewardCoinsEl.textContent = coinsEarned;
+    rewardStarsEl.textContent = starsEarned;
+    
+    // === SAVE REWARDS TO MAIN APP ===
+    saveRewards(coinsEarned, starsEarned);
+    
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('eagleHighScore', highScore);
+        document.getElementById('highScore').textContent = highScore.toLocaleString();
+    }
+    
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+    
+    window.pendingRewards = { coins: coinsEarned, stars: starsEarned };
+}
         
         function claimRewards() {
             if (!window.pendingRewards) return;
