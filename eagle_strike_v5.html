@@ -183,6 +183,12 @@
     </div>
 
     <script>
+        // === HERO STORE INTEGRATION ===
+        let gameState = JSON.parse(localStorage.getItem('vetsRushGameState')) || { extraLives: 0, shieldDuration: 0, reinforcedShield: 0 };
+
+        let extraLives = gameState.extraLives || 0;
+        let shieldDurationBonus = gameState.shieldDuration || 0;
+        let reinforcedBonus = gameState.reinforcedShield || 0;
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
@@ -222,29 +228,26 @@
             player.y = 260;
             player.vy = 0;
             player.rotation = 0;
-            player.hasShield = true;
-            player.shieldTime = Date.now() + 4500;
-            player.hasDoubleFire = false;
-            
-            enemies = [];
-            missiles = [];
-            playerMissiles = [];
-            powerups = [];
-            particles = [];
-            
-            score = 0;
-            distance = 0;
-            medals = 0;
-            lives = 3;
-            
-            document.getElementById('score').textContent = score;
-            document.getElementById('medals').textContent = medals;
-            document.getElementById('lives').textContent = lives;
-            
-            lastEnemySpawn = Date.now();
-            lastMissileSpawn = Date.now();
-            lastPowerupSpawn = Date.now();
-            lastShot = Date.now();
+    
+           // Apply store upgrades
+           lives = 3 + (extraLives || 0);
+           player.hasShield = true;
+           player.shieldTime = Date.now() + (4500 + (shieldDurationBonus * 1000));
+    
+           enemies = [];
+    
+           score = 0;
+           distance = 0;
+           medals = 0;
+    
+           document.getElementById('score').textContent = score;
+           document.getElementById('medals').textContent = medals;
+           document.getElementById('lives').textContent = lives;
+    
+           lastEnemySpawn = Date.now();
+           lastMissileSpawn = Date.now();
+           lastPowerupSpawn = Date.now();
+           lastShot = Date.now();
         }
         
         function createExplosion(x, y, color = '#f59e0b') {
@@ -825,7 +828,9 @@
         }
         
         function startGame() {
-            document.getElementById('gameOverScreen').classList.add('hidden');
+            saveRewards(Math.floor(score * 0.8) + (medals * 120), Math.max(1, Math.floor(medals / 2)));
+
+            document.getElementById('gameOverScreen').classList.remove('hidden');
             startCountdown();
         }
         
@@ -968,6 +973,12 @@
         };
         
         window.EagleStrike = { startGame: () => startCountdown() };
+        function saveRewards(coinsEarned, starsEarned) {
+            let state = JSON.parse(localStorage.getItem('vetsRushGameState')) || {};
+            state.heroCoins = (state.heroCoins || 0) + (coinsEarned || 0);
+            state.stars = (state.stars || 0) + (starsEarned || 0);
+            localStorage.setItem('vetsRushGameState', JSON.stringify(state));
+        }
     </script>
 </body>
 </html>
