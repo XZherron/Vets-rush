@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HERO REVEAL • VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Press+Start+2P&amp;display=swap');
+        
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); 
+            color: white; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .puzzle-tile {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #334155;
+            border: 4px solid #475569;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .puzzle-tile:hover {
+            transform: scale(1.05);
+            border-color: #64748b;
+        }
+        
+        .puzzle-tile.revealed {
+            background: #1e2937;
+            border-color: #22c55e;
+            animation: revealPop 0.3s ease;
+        }
+        
+        .puzzle-tile.revealed::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 70%);
+        }
+        
+        @keyframes revealPop {
+            0% { transform: scale(0.6); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        
+        .hero-emoji {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .level-card {
+            transition: all 0.2s ease;
+        }
+        
+        .level-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        .level-card.locked {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .game-grid {
+            display: grid;
+            gap: 8px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: confetti-fall 2.5s ease-out forwards;
+            z-index: 100;
+        }
+        
+        .stat-value {
+            font-family: 'Press Start 2P', system-ui;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        
+        .cost-badge {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            background: #f59e0b;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 1px 5px;
+            border-radius: 9999px;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <!-- HEADER -->
+    <div class="bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-x-3">
+            <div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-2xl">🇺🇸</div>
+            <div>
+                <div class="font-bold text-3xl tracking-tighter text-red-500">VETS RUSH</div>
+                <div class="text-[10px] text-slate-400 -mt-1">SPIN FOR HEROES • HOMES FOR VETERANS</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-x-2">
+            <div class="bg-slate-800 px-3 py-1 rounded-2xl flex items-center gap-x-2 text-sm">
+                <i class="fa-solid fa-globe text-emerald-400"></i>
+                <span class="font-mono">11.5M</span>
+            </div>
+            <button onclick="returnToBase()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-2xl flex items-center gap-x-2 text-sm">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>BASE</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- USER BAR -->
+    <div class="px-4 py-3 bg-slate-900 flex items-center justify-between border-b border-slate-700">
+        <div class="flex items-center gap-x-3">
+            <div class="w-9 h-9 bg-yellow-500 rounded-full flex items-center justify-center text-xl">🪖</div>
+            <div>
+                <div class="font-bold" id="username">PatriotVet69</div>
+                <div class="text-xs text-slate-400">LVL 14 • Rank #8,472</div>
+            </div>
+        </div>
+        <div class="text-right">
+            <div class="font-mono text-xl font-bold text-yellow-400" id="hero-coins">3,277,350</div>
+            <div class="text-[10px] text-slate-400">HERO COINS 🪙</div>
+        </div>
+    </div>
+
+    <!-- LEVEL SELECT -->
+    <div id="level-select" class="section active px-4 pt-6 pb-20">
+        <div class="max-w-md mx-auto">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-x-2 bg-purple-600/20 text-purple-400 px-4 py-1 rounded-2xl text-sm font-bold mb-3">
+                    <i class="fa-solid fa-puzzle-piece"></i>
+                    <span>HERO REVEAL</span>
+                </div>
+                <div class="text-4xl font-bold tracking-tighter">UNCOVER THE HEROES</div>
+                <div class="text-slate-400 mt-1">Tap tiles to reveal American heroes • Complete the grid for massive rewards</div>
+            </div>
+
+            <!-- LEVEL CARDS -->
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Level 1 -->
+                <div onclick="startLevel(1)" class="level-card bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-3xl p-5 cursor-pointer border border-emerald-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🟢</div>
+                                <div>
+                                    <div class="font-bold text-xl">RECRUIT</div>
+                                    <div class="text-emerald-200 text-sm">3×3 GRID • EASY</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-emerald-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">500-1.2K</div>
+                            <div class="text-[10px] text-emerald-200">+1⭐ +1🇺🇸</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 2 -->
+                <div onclick="startLevel(2)" class="level-card bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-5 cursor-pointer border border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🔵</div>
+                                <div>
+                                    <div class="font-bold text-xl">SOLDIER</div>
+                                    <div class="text-blue-200 text-sm">4×4 GRID • MEDIUM</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-blue-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">1.8K-3.5K</div>
+                            <div class="text-[10px] text-blue-200">+2⭐ +1🇺🇸 +1🎖️</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 3 -->
+                <div onclick="startLevel(3)" class="level-card bg-gradient-to-br from-orange-600 to-orange-700 rounded-3xl p-5 cursor-pointer border border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🟠</div>
+                                <div>
+                                    <div class="font-bold text-xl">VETERAN</div>
+                                    <div class="text-orange-200 text-sm">5×5 GRID • HARD</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-orange-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">4.5K-8K</div>
+                            <div class="text-[10px] text-orange-200">+3⭐ +2🇺🇸 +1🧨</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 4 -->
+                <div onclick="startLevel(4)" class="level-card bg-gradient-to-br from-purple-600 to-purple-700 rounded-3xl p-5 cursor-pointer border border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-x-2">
+                                <div class="text-3xl">🟣</div>
+                                <div>
+                                    <div class="font-bold text-xl">LEGEND</div>
+                                    <div class="text-purple-200 text-sm">6×6 GRID • EXPERT</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-purple-200">REWARD</div>
+                            <div class="font-mono text-2xl font-bold">12K-25K</div>
+                            <div class="text-[10px] text-purple-200">+5⭐ +3🇺🇸 +1🌀 +1🃏</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center text-xs text-slate-400">
+                <i class="fa-solid fa-info-circle mr-1"></i> Some tiles are FREE • Paid tiles cost Houses (saved for later levels)
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="section px-4 pt-4 pb-20">
+        <div class="max-w-md mx-auto">
+            <!-- Game Header -->
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <div class="flex items-center gap-x-2">
+                        <div id="level-name" class="font-bold text-xl text-emerald-400">RECRUIT</div>
+                        <div id="level-progress" class="text-[10px] bg-slate-700 px-2 py-0.5 rounded-full font-mono">1/4</div>
+                    </div>
+                    <div id="level-subtitle" class="text-sm text-slate-400">3×3 • EASY</div>
+                </div>
+                <div class="flex items-center gap-x-2">
+                    <button onclick="shufflePuzzle(true)" 
+                            class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-2xl flex items-center gap-x-2 text-sm font-bold">
+                        <i class="fa-solid fa-sync-alt"></i>
+                        <span>NEW PUZZLE</span>
+                    </button>
+                    <button onclick="endGame(false)" 
+                            class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-2xl flex items-center gap-x-2 text-sm font-bold">
+                        <i class="fa-solid fa-times"></i>
+                        <span>QUIT</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="bg-slate-800 rounded-2xl p-3 mb-4 flex justify-between text-center">
+                <div>
+                    <div class="text-[10px] text-slate-400">PROGRESS</div>
+                    <div id="progress" class="font-mono text-lg font-bold">0/9</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-400">COINS</div>
+                    <div id="coins-found" class="font-mono text-lg font-bold text-yellow-400">0</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-400">HEROES</div>
+                    <div id="heroes-found" class="font-mono text-lg font-bold text-emerald-400">0</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-400">TIME</div>
+                    <div id="timer" class="font-mono text-lg font-bold">00:00</div>
+                </div>
+                <div>
+                    <div class="text-[10px] text-slate-400">HOUSES</div>
+                    <div id="houses-left" class="font-mono text-lg font-bold text-orange-400">12</div>
+                </div>
+            </div>
+
+            <!-- Puzzle Grid -->
+            <div id="game-grid" class="game-grid mb-4"></div>
+
+            <!-- Hint -->
+            <div class="text-center text-xs text-slate-400 mb-4">
+                Tap FREE tiles (no badge) • Paid tiles show 🏠 cost • Complete the grid for BIG rewards!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#ef4444');
+        }
+
+        // Game State (shared with main app)
+        let gameState = {
+            heroCoins: 3277350,
+            homes: 12,
+            stars: 0,
+            flags: 0,
+            medals: 0,
+            torpedoes: 0,
+            freedom: 0,
+            valor: 0
+        };
+
+        // Load from localStorage
+        function loadGameState() {
+            const saved = localStorage.getItem('vetsRushGameState');
+            if (saved) {
+                gameState = JSON.parse(saved);
+            }
+            updateUI();
+        }
+
+        function saveGameState() {
+            localStorage.setItem('vetsRushGameState', JSON.stringify(gameState));
+        }
+
+        function updateUI() {
+            const coinsEl = document.getElementById('hero-coins');
+            if (coinsEl) coinsEl.textContent = gameState.heroCoins.toLocaleString();
+            
+            const housesEl = document.getElementById('houses-left');
+            if (housesEl) housesEl.textContent = gameState.homes;
+        }
+
+        // Level configs
+        const levelConfig = {
+            1: { 
+                size: 3, 
+                name: "RECRUIT", 
+                subtitle: "3×3 • EASY", 
+                color: "emerald",
+                minReward: 500, 
+                maxReward: 1200,
+                baseStars: 1,
+                baseFlags: 1,
+                baseMedals: 0,
+                baseTorpedoes: 0,
+                baseFreedom: 0,
+                baseValor: 0
+            },
+            2: { 
+                size: 4, 
+                name: "SOLDIER", 
+                subtitle: "4×4 • MEDIUM", 
+                color: "blue",
+                minReward: 1800, 
+                maxReward: 3500,
+                baseStars: 2,
+                baseFlags: 1,
+                baseMedals: 1,
+                baseTorpedoes: 0,
+                baseFreedom: 0,
+                baseValor: 0
+            },
+            3: { 
+                size: 5, 
+                name: "VETERAN", 
+                subtitle: "5×5 • HARD", 
+                color: "orange",
+                minReward: 4500, 
+                maxReward: 8000,
+                baseStars: 3,
+                baseFlags: 2,
+                baseMedals: 0,
+                baseTorpedoes: 1,
+                baseFreedom: 0,
+                baseValor: 0
+            },
+            4: { 
+                size: 6, 
+                name: "LEGEND", 
+                subtitle: "6×6 • EXPERT", 
+                color: "purple",
+                minReward: 12000, 
+                maxReward: 25000,
+                baseStars: 5,
+                baseFlags: 3,
+                baseMedals: 1,
+                baseTorpedoes: 1,
+                baseFreedom: 1,
+                baseValor: 1
+            }
+        };
+
+        // Cost configuration per level (with slight randomization)
+        const levelCosts = {
+            1: { freeChance: 0.75, minCost: 1, maxCost: 1 },
+            2: { freeChance: 0.55, minCost: 2, maxCost: 5 },
+            3: { freeChance: 0.35, minCost: 10, maxCost: 50 },
+            4: { freeChance: 0.15, minCost: 100, maxCost: 10000 }
+        };
+
+        // Level-specific emoji pools for variety
+        const levelEmojis = {
+            1: ['🦅', '🇺🇸', '🪖', '🎖️', '⭐', '🧨', '💰', '🚀', '🛡️'],
+            2: ['🦅', '🇺🇸', '🪖', '🎖️', '⭐', '🧨', '🌀', '🃏', '💰', '🚀', '🛡️', '🏅'],
+            3: ['🦅', '🇺🇸', '🪖', '🎖️', '⭐', '🧨', '🌀', '🃏', '💰', '🚀', '🛡️', '🏅', '🎗️', '🦅', '🏠'],
+            4: ['🦅', '🇺🇸', '🪖', '🎖️', '⭐', '🧨', '🌀', '🃏', '💰', '🚀', '🛡️', '🏅', '🎗️', '🦅', '🏠', '🧭', '📜', '⚓']
+        };
+
+        let currentLevel = 1;
+        let grid = [];
+        let revealed = 0;
+        let totalTiles = 0;
+        let coinsFound = 0;
+        let heroesFound = 0;
+        let startTime = 0;
+        let timerInterval = null;
+
+        function startLevel(level) {
+            currentLevel = level;
+            const config = levelConfig[level];
+            let costConfig = JSON.parse(JSON.stringify(levelCosts[level] || levelCosts[1]));
+            
+            // Slight randomization to freeChance for variety (±8%)
+            costConfig.freeChance = Math.max(0.1, Math.min(0.9, costConfig.freeChance + (Math.random() - 0.5) * 0.16));
+            
+            // Hide level select, show game
+            document.getElementById('level-select').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            
+            // Set header
+            document.getElementById('level-name').textContent = config.name;
+            document.getElementById('level-subtitle').textContent = config.subtitle;
+            document.getElementById('level-name').className = `font-bold text-xl text-${config.color}-400`;
+            document.getElementById('level-progress').textContent = `${level}/4`;
+            
+            // Reset game state
+            revealed = 0;
+            coinsFound = 0;
+            heroesFound = 0;
+            startTime = Date.now();
+            
+            // Create grid with fresh random puzzle
+            generateRandomPuzzle(config, costConfig);
+            
+            // Render grid
+            renderGrid(config.size);
+            
+            // Reset UI
+            document.getElementById('progress').textContent = `0/${totalTiles}`;
+            document.getElementById('coins-found').textContent = '0';
+            document.getElementById('heroes-found').textContent = '0';
+            document.getElementById('timer').textContent = '00:00';
+            document.getElementById('houses-left').textContent = gameState.homes;
+            
+            // Start timer
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function generateRandomPuzzle(config, costConfig) {
+            totalTiles = config.size * config.size;
+            grid = Array(config.size).fill().map(() => Array(config.size).fill(null));
+            
+            const fullPool = levelEmojis[currentLevel] || levelEmojis[1];
+            
+            // Pick a diverse, unique subset of emojis for THIS puzzle only (makes every play feel brand new)
+            const puzzleEmojis = [];
+            const shuffled = [...fullPool].sort(() => Math.random() - 0.5);
+            const numToUse = Math.min(9, Math.max(5, Math.floor(totalTiles / 2.5)));
+            for (let i = 0; i < numToUse; i++) {
+                puzzleEmojis.push(shuffled[i % shuffled.length]);
+            }
+            
+            for (let r = 0; r < config.size; r++) {
+                for (let c = 0; c < config.size; c++) {
+                    const isPaid = Math.random() > costConfig.freeChance;
+                    let cost = 0;
+                    if (isPaid) {
+                        const range = costConfig.maxCost - costConfig.minCost;
+                        cost = Math.floor(Math.random() * range) + costConfig.minCost;
+                        // Occasional "rare expensive" tiles in higher levels
+                        if (currentLevel >= 3 && Math.random() < 0.12) {
+                            cost = Math.floor(cost * (1.5 + Math.random()));
+                        }
+                    }
+                    
+                    grid[r][c] = {
+                        type: puzzleEmojis[Math.floor(Math.random() * puzzleEmojis.length)],
+                        revealed: false,
+                        value: Math.floor(Math.random() * 5) + 2,
+                        cost: cost
+                    };
+                }
+            }
+        }
+
+        function shufflePuzzle(fullNew = false) {
+            if (!grid.length) return;
+            
+            const config = levelConfig[currentLevel];
+            let costConfig = JSON.parse(JSON.stringify(levelCosts[currentLevel] || levelCosts[1]));
+            costConfig.freeChance = Math.max(0.1, Math.min(0.9, costConfig.freeChance + (Math.random() - 0.5) * 0.16));
+            
+            const fullPool = levelEmojis[currentLevel] || levelEmojis[1];
+            const puzzleEmojis = [];
+            const shuffled = [...fullPool].sort(() => Math.random() - 0.5);
+            const numToUse = Math.min(9, Math.max(5, Math.floor(config.size * config.size / 2.5)));
+            for (let i = 0; i < numToUse; i++) {
+                puzzleEmojis.push(shuffled[i % shuffled.length]);
+            }
+            
+            const newGrid = Array(config.size).fill().map(() => Array(config.size).fill(null));
+            
+            for (let r = 0; r < config.size; r++) {
+                for (let c = 0; c < config.size; c++) {
+                    if (!fullNew && grid[r][c].revealed) {
+                        newGrid[r][c] = grid[r][c]; // keep revealed only if not full new
+                    } else {
+                        const isPaid = Math.random() > costConfig.freeChance;
+                        let cost = 0;
+                        if (isPaid) {
+                            const range = costConfig.maxCost - costConfig.minCost;
+                            cost = Math.floor(Math.random() * range) + costConfig.minCost;
+                            if (currentLevel >= 3 && Math.random() < 0.12) {
+                                cost = Math.floor(cost * (1.5 + Math.random()));
+                            }
+                        }
+                        
+                        newGrid[r][c] = {
+                            type: puzzleEmojis[Math.floor(Math.random() * puzzleEmojis.length)],
+                            revealed: false,
+                            value: Math.floor(Math.random() * 5) + 2,
+                            cost: cost
+                        };
+                    }
+                }
+            }
+            
+            grid = newGrid;
+            renderGrid(config.size);
+            
+            // Flash message
+            const msg = document.createElement('div');
+            msg.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-2 rounded-2xl text-sm font-bold z-50';
+            msg.textContent = fullNew ? '🆕 Brand new puzzle!' : '🔄 Puzzle reshuffled!';
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 1200);
+        }
+
+        function renderGrid(size) {
+            const container = document.getElementById('game-grid');
+            container.innerHTML = '';
+            container.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            container.style.maxWidth = size === 6 ? '380px' : size === 5 ? '340px' : size === 4 ? '300px' : '240px';
+            
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const tileData = grid[r][c];
+                    const tile = document.createElement('div');
+                    tile.className = `puzzle-tile text-4xl`;
+                    if (tileData.cost > 0) {
+                        tile.style.borderColor = '#f59e0b';
+                    }
+                    tile.dataset.row = r;
+                    tile.dataset.col = c;
+                    
+                    if (tileData.revealed) {
+                        tile.classList.add('revealed');
+                        tile.innerHTML = `<span class="hero-emoji">${tileData.type}</span>`;
+                    } else {
+                        tile.innerHTML = `<span class="hero-emoji">❓</span>`;
+                    }
+                    
+                    // Add cost badge if paid and not revealed
+                    if (tileData.cost > 0 && !tileData.revealed) {
+                        const badge = document.createElement('div');
+                        badge.className = 'cost-badge';
+                        badge.innerHTML = `🏠${tileData.cost}`;
+                        tile.appendChild(badge);
+                    }
+                    
+                    tile.onclick = () => revealTile(r, c, tile);
+                    
+                    container.appendChild(tile);
+                }
+            }
+        }
+
+        function revealTile(row, col, tileElement) {
+            if (grid[row][col].revealed) return;
+            
+            const tileData = grid[row][col];
+            
+            // COST CHECK
+            if (tileData.cost > 0) {
+                if (gameState.homes < tileData.cost) {
+                    const msg = document.createElement('div');
+                    msg.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-2xl text-sm font-bold z-50 flex items-center gap-x-2';
+                    msg.innerHTML = `🏠 Need ${tileData.cost} Houses!<br><span class="text-xs">Support vets at vettedpatriots.org</span>`;
+                    document.body.appendChild(msg);
+                    setTimeout(() => msg.remove(), 2200);
+                    return;
+                }
+                gameState.homes -= tileData.cost;
+                document.getElementById('houses-left').textContent = gameState.homes;
+            }
+            
+            // Reveal
+            tileData.revealed = true;
+            revealed++;
+            
+            // Update tile visually
+            tileElement.classList.add('revealed');
+            tileElement.innerHTML = `<span class="hero-emoji">${tileData.type}</span>`;
+            
+            // Remove cost badge
+            const badge = tileElement.querySelector('.cost-badge');
+            if (badge) badge.remove();
+            
+            // Rewards
+            const coinReward = tileData.value * 50;
+            gameState.heroCoins += coinReward;
+            coinsFound += coinReward;
+            
+            document.getElementById('hero-coins').textContent = gameState.heroCoins.toLocaleString();
+            document.getElementById('coins-found').textContent = coinsFound;
+            
+            if (['🦅', '🇺🇸', '🎖️', '🪖'].includes(tileData.type)) {
+                heroesFound++;
+                document.getElementById('heroes-found').textContent = heroesFound;
+            }
+            
+            document.getElementById('progress').textContent = `${revealed}/${totalTiles}`;
+            
+            // Check win
+            if (revealed === totalTiles) {
+                setTimeout(() => endGame(true), 600);
+            }
+            
+            saveGameState();
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const min = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const sec = (elapsed % 60).toString().padStart(2, '0');
+            const timerEl = document.getElementById('timer');
+            if (timerEl) timerEl.textContent = `${min}:${sec}`;
+        }
+
+        function endGame(completed) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            
+            const config = levelConfig[currentLevel];
+            let finalReward = 0;
+            let bonusText = '';
+            
+            if (completed) {
+                // Base reward
+                finalReward = Math.floor(Math.random() * (config.maxReward - config.minReward + 1)) + config.minReward;
+                
+                // Speed bonus (under 60s)
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                if (elapsed < 60) {
+                    const speedBonus = Math.floor(finalReward * 0.3);
+                    finalReward += speedBonus;
+                    bonusText = `+${speedBonus} SPEED BONUS! `;
+                }
+                
+                // Completion bonus
+                finalReward += 500;
+                
+                gameState.heroCoins += finalReward;
+                gameState.stars += config.baseStars;
+                gameState.flags += config.baseFlags;
+                gameState.medals += config.baseMedals;
+                gameState.torpedoes += config.baseTorpedoes;
+                gameState.freedom += config.baseFreedom;
+                gameState.valor += config.baseValor;
+                
+                saveGameState();
+                
+                // Confetti for higher levels
+                if (currentLevel >= 3) {
+                    launchConfetti(80);
+                }
+            }
+            
+            // Show result
+            const resultHTML = completed 
+                ? `<div class="text-center">
+                     <div class="text-6xl mb-4">🎉</div>
+                     <div class="text-3xl font-bold text-emerald-400 mb-2">MISSION COMPLETE!</div>
+                     <div class="text-xl mb-4">${bonusText}You earned <span class="font-mono text-yellow-400">${finalReward.toLocaleString()}</span> Hero Coins!</div>
+                     <div class="grid grid-cols-2 gap-3 text-sm mb-6">
+                       <div class="bg-emerald-900/50 rounded-xl p-3">+${config.baseStars} ⭐ Stars</div>
+                       <div class="bg-blue-900/50 rounded-xl p-3">+${config.baseFlags} 🇺🇸 Flags</div>
+                       ${config.baseMedals > 0 ? `<div class="bg-orange-900/50 rounded-xl p-3">+${config.baseMedals} 🎖️ Medals</div>` : ''}
+                       ${config.baseTorpedoes > 0 ? `<div class="bg-red-900/50 rounded-xl p-3">+${config.baseTorpedoes} 🧨 Torpedoes</div>` : ''}
+                       ${config.baseFreedom > 0 ? `<div class="bg-emerald-900/50 rounded-xl p-3">+${config.baseFreedom} 🌀 Freedom</div>` : ''}
+                       ${config.baseValor > 0 ? `<div class="bg-purple-900/50 rounded-xl p-3">+${config.baseValor} 🃏 Valor</div>` : ''}
+                     </div>
+                   </div>`
+                : `<div class="text-center">
+                     <div class="text-6xl mb-4">🏠</div>
+                     <div class="text-3xl font-bold mb-2">Returned to Base</div>
+                     <div class="text-slate-400">Progress saved • Come back anytime!</div>
+                   </div>`;
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+            
+            let buttonsHTML = '';
+            if (completed) {
+                const nextLevel = currentLevel < 4 ? currentLevel + 1 : 1;
+                buttonsHTML = `
+                    <div class="flex flex-col gap-3 mt-6">
+                        <button onclick="claimAndNextLevel(this, ${nextLevel})" 
+                                class="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold py-4 rounded-2xl text-lg flex items-center justify-center gap-x-2">
+                            <span>CLAIM REWARDS & PLAY LEVEL ${nextLevel}</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button onclick="returnToLevelSelect(this)" 
+                                class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl text-sm">
+                            RETURN TO LEVEL SELECT
+                        </button>
+                    </div>
+                `;
+            } else {
+                buttonsHTML = `
+                    <button onclick="returnToLevelSelect(this)" 
+                            class="mt-6 w-full bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700 text-white font-bold py-4 rounded-2xl text-lg">
+                        RETURN TO BASE
+                    </button>
+                `;
+            }
+            
+            modal.innerHTML = `
+                <div class="bg-slate-900 rounded-3xl p-8 max-w-sm w-full text-center border border-slate-700">
+                    ${resultHTML}
+                    ${buttonsHTML}
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function returnToLevelSelect(btn) {
+            btn.closest('.fixed').remove();
+            document.getElementById('game-screen').classList.remove('active');
+            document.getElementById('level-select').classList.add('active');
+            updateUI();
+        }
+
+        function claimAndNextLevel(btn, nextLevel) {
+            btn.closest('.fixed').remove();
+            // Start the next level immediately (progression!)
+            startLevel(nextLevel);
+        }
+
+        function returnToBase() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            window.close(); // or window.location.href = 'index.html' if needed
+        }
+
+        function launchConfetti(count) {
+            const colors = ['#ef4444', '#3b82f6', '#eab308', '#22c55e', '#a855f7'];
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const conf = document.createElement('div');
+                    conf.className = 'confetti';
+                    conf.style.left = Math.random() * 100 + 'vw';
+                    conf.style.top = '-20px';
+                    conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    conf.style.animationDelay = (Math.random() * 0.5) + 's';
+                    document.body.appendChild(conf);
+                    
+                    setTimeout(() => conf.remove(), 3000);
+                }, i * 8);
+            }
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                const gameScreen = document.getElementById('game-screen');
+                if (gameScreen.classList.contains('active')) {
+                    shufflePuzzle(true); // full new puzzle on Spacebar
+                }
+            }
+            if (e.key.toLowerCase() === 'h') {
+                const gameScreen = document.getElementById('game-screen');
+                if (gameScreen.classList.contains('active') && grid.length) {
+                    // Reveal a random unrevealed tile (free only)
+                    const unrevealed = [];
+                    for (let r = 0; r < grid.length; r++) {
+                        for (let c = 0; c < grid[r].length; c++) {
+                            if (!grid[r][c].revealed && grid[r][c].cost === 0) {
+                                unrevealed.push({r, c});
+                            }
+                        }
+                    }
+                    if (unrevealed.length > 0) {
+                        const pick = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+                        const tileEl = document.querySelector(`[data-row="${pick.r}"][data-col="${pick.c}"]`);
+                        if (tileEl) revealTile(pick.r, pick.c, tileEl);
+                    }
+                }
+            }
+        });
+
+        // Init
+        function init() {
+            initTailwind();
+            loadGameState();
+            
+            // Show level select by default
+            document.getElementById('level-select').classList.add('active');
+            
+            // Easter egg: click logo to add 10 houses (for testing)
+            const logo = document.querySelector('.bg-red-600');
+            if (logo) {
+                logo.onclick = () => {
+                    gameState.homes += 10;
+                    saveGameState();
+                    updateUI();
+                    const t = document.createElement('div');
+                    t.className = 'fixed top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-xl text-xs';
+                    t.textContent = '+10 Houses (test)';
+                    document.body.appendChild(t);
+                    setTimeout(() => t.remove(), 800);
+                };
+            }
+            
+            console.log('%c[Hero Reveal] Ready with fresh random puzzles every time!', 'color:#22c55e');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
