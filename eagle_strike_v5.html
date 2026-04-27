@@ -902,8 +902,12 @@
         }
         
         function returnToVetsRush() {
-            window.location.href = 'https://vets-rush.vercel.app';
+        if (window.pendingRewards) {
+            localStorage.setItem('eagleStrikeRewards', JSON.stringify(window.pendingRewards));
         }
+
+        window.location.href = '/';
+    }
         
         function restartGame() {
             document.getElementById('gameOverScreen').classList.add('hidden');
