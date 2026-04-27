@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vets Rush Game State</title>
+</head>
+<body>
+    <script>
+        // GLOBAL GAME STATE
+        const DEFAULT_STATE = {
+            heroCoins: 0,
+            stars: 0,
+            shields: 0,
+            valor: 0,
+            freedom: 0,
+            torpedoes: 0,
+            flags: 0,
+            helmets: 0,
+            medals: 0,
+            homes: 0,
+            beds: 0,
+            upgrades: {
+                extraLife: 0,
+                shieldDuration: 0
+            }
+        };
+
+        function loadGame() {
+            const saved = localStorage.getItem("vetsRushState");
+            return saved ? JSON.parse(saved) : { ...DEFAULT_STATE };
+        }
+
+        function saveGame(state) {
+            localStorage.setItem("vetsRushState", JSON.stringify(state));
+        }
+
+        let game = loadGame();
+
+        // ADD REWARDS
+        function addReward(type, amount) {
+            if (!game[type]) game[type] = 0;
+            game[type] += amount;
+            saveGame(game);
+            updateUI();
+        }
+
+        // SPEND
+        function spend(type, amount) {
+            if (game[type] >= amount) {
+                game[type] -= amount;
+                saveGame(game);
+                updateUI();
+                return true;
+            }
+            return false;
+        }
+
+        // UPDATE UI GLOBAL
+        function updateUI() {
+            const coins = document.getElementById("hero-coins");
+            if (coins) coins.textContent = game.heroCoins.toLocaleString();
+
+            const stars = document.getElementById("stars-count");
+            if (stars) stars.textContent = game.stars;
+
+            const shields = document.getElementById("shields-count");
+            if (shields) shields.textContent = game.shields;
+        }
+
+        // SYNC ON LOAD
+        document.addEventListener("DOMContentLoaded", () => {
+            updateUI();
+        });
+    </script>
+</body>
+</html>
