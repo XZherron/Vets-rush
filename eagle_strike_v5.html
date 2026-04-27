@@ -982,6 +982,30 @@
             state.stars = (state.stars || 0) + (starsEarned || 0);
             localStorage.setItem('vetsRushGameState', JSON.stringify(state));
         }
+        // === FIX: Force start screen to show ===
+function showStartScreen() {
+    const startScreen = document.createElement('div');
+    startScreen.className = 'absolute inset-0 bg-black/80 flex items-center justify-center z-50';
+    startScreen.innerHTML = `
+        <div class="text-center">
+            <div class="text-7xl mb-6">🦅</div>
+            <div class="text-4xl font-black mb-2 tracking-wider">EAGLE STRIKE</div>
+            <div class="text-orange-400 mb-8">VETS RUSH MISSION</div>
+            
+            <button onclick="this.parentElement.parentElement.remove(); startCountdown();" 
+                    class="px-12 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xl rounded-2xl flex items-center gap-3 mx-auto hover:brightness-110 transition-all">
+                <i class="fas fa-play mr-2"></i> START MISSION
+            </button>
+            
+            <div class="mt-8 text-xs text-slate-500">Tap &amp; hold CLIMB to rise • Release to dive</div>
+        </div>
+    `;
+    document.querySelector('.game-container').appendChild(startScreen);
+}
+
+window.onload = function() {
+    showStartScreen();
+};
     </script>
 </body>
 </html>
