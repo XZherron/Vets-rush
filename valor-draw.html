@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VALOR DRAW • VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%);
+            color: white;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .card {
+            width: 68px;
+            height: 94px;
+            background: white;
+            border: 3px solid #1e2937;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e2937;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card.red { color: #dc2626; }
+        .card.black { color: #1e2937; }
+        
+        .card.hold {
+            border-color: #22c55e;
+            box-shadow: 0 0 0 5px #22c55e, 0 10px 15px -3px rgb(0 0 0 / 0.3);
+            transform: translateY(-6px);
+        }
+        
+        .card.dealt {
+            animation: dealCard 0.4s ease forwards;
+        }
+        
+        @keyframes dealCard {
+            from { transform: translateY(-80px) rotate(-12deg); opacity: 0; }
+            to { transform: translateY(0) rotate(0); opacity: 1; }
+        }
+        
+        .poker-table {
+            background: linear-gradient(#166534, #14532d);
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.6);
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .nav-tab.active { 
+            color: #dc2626; 
+            border-bottom: 3px solid #dc2626; 
+        }
+        
+        .game-card:active { transform: scale(0.95); }
+        
+        .result-win {
+            animation: popIn 0.4s ease;
+        }
+        
+        .big-win {
+            animation: bigWinPop 0.6s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <!-- Header -->
+    <div class="bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-x-3">
+            <div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-2xl">🇺🇸</div>
+            <div>
+                <div class="font-bold text-3xl tracking-tighter text-red-500">VETS RUSH</div>
+                <div class="text-[10px] text-slate-400 -mt-1">VALOR DRAW • POKER FOR PATRIOTS</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-x-2">
+            <div onclick="returnToBase()" 
+                 class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-2xl flex items-center gap-x-2 text-sm cursor-pointer">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>RETURN TO BASE</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Bar -->
+    <div class="px-4 py-3 bg-slate-900 flex items-center justify-between border-b border-slate-700">
+        <div class="flex items-center gap-x-3">
+            <div class="w-9 h-9 bg-yellow-500 rounded-full flex items-center justify-center text-xl">🪖</div>
+            <div>
+                <div class="font-bold" id="player-name">PatriotVet69</div>
+                <div class="text-xs text-slate-400">LVL 14 • Rank #8,472</div>
+            </div>
+        </div>
+        
+        <div class="text-right">
+            <div class="font-mono text-xl font-bold text-yellow-400" id="hero-coins">3,277,350</div>
+            <div class="text-[10px] text-slate-400">HERO COINS 🪙</div>
+        </div>
+    </div>
+
+    <!-- Valor Chips -->
+    <div class="px-4 py-2 bg-slate-900 flex justify-center border-b border-slate-700">
+        <div class="bg-purple-600 px-6 py-1.5 rounded-2xl flex items-center gap-x-2">
+            <i class="fa-solid fa-dice text-xl"></i>
+            <div>
+                <span class="font-bold text-lg" id="valor-chips">24</span>
+                <span class="text-xs text-purple-200">VALOR CHIPS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Area -->
+    <div class="max-w-md mx-auto px-4 pt-6 pb-8">
+        
+        <!-- Title -->
+        <div class="text-center mb-6">
+            <div class="text-4xl mb-2">🃏</div>
+            <div class="font-bold text-3xl tracking-tight">VALOR DRAW</div>
+            <div class="text-sm text-slate-400">Jacks or Better • 1 Chip per round</div>
+        </div>
+
+        <!-- Cards -->
+        <div class="poker-table rounded-3xl p-6 mb-6 border border-emerald-900">
+            <div class="flex justify-center gap-3 mb-2" id="cards-container">
+                <!-- Cards populated by JS -->
+            </div>
+            
+            <div class="text-center text-xs text-emerald-400 mt-2" id="hold-instruction">
+                TAP CARDS TO HOLD • THEN DRAW
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex gap-3">
+            <button onclick="dealOrDraw()" 
+                    id="action-btn"
+                    class="flex-1 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-black font-bold py-4 rounded-2xl text-xl flex items-center justify-center gap-x-3 shadow-lg">
+                <span id="action-text">DEAL</span>
+                <i class="fa-solid fa-play" id="action-icon"></i>
+            </button>
+            
+            <button onclick="newRound()" 
+                    class="px-6 bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center">
+                <i class="fa-solid fa-redo text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Result -->
+        <div id="result-area" class="mt-6 hidden">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 text-center">
+                <div id="result-text" class="text-2xl font-bold mb-1"></div>
+                <div id="result-subtext" class="text-emerald-400 text-sm"></div>
+                
+                <div id="reward-display" class="mt-3 flex justify-center gap-4 text-sm">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Payout Table -->
+        <div class="mt-8">
+            <div class="text-xs text-slate-400 mb-2 px-1 font-bold">PAYOUTS (per chip)</div>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Royal Flush</span>
+                    <span class="font-mono text-emerald-400">250</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Straight Flush</span>
+                    <span class="font-mono text-emerald-400">50</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Four of a Kind</span>
+                    <span class="font-mono text-emerald-400">25</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Full House</span>
+                    <span class="font-mono text-emerald-400">9</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Flush</span>
+                    <span class="font-mono text-emerald-400">6</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Straight</span>
+                    <span class="font-mono text-emerald-400">4</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Three of a Kind</span>
+                    <span class="font-mono text-emerald-400">3</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between">
+                    <span>Two Pair</span>
+                    <span class="font-mono text-emerald-400">2</span>
+                </div>
+                <div class="bg-slate-800 rounded-xl px-3 py-2 flex justify-between col-span-2">
+                    <span>Jacks or Better</span>
+                    <span class="font-mono text-emerald-400">1</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center text-[10px] text-slate-500 mt-4">
+            Every hand helps fund homes for veterans 🇺🇸
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#eab308');
+        }
+        
+        // Game State (shared with main app)
+        let gameState = {
+            heroCoins: 3277350,
+            valor: 24,
+            stars: 0,
+            torpedoes: 0,
+            freedom: 0,
+            flags: 0,
+            helmets: 0,
+            medals: 0,
+            homes: 12,
+            beds: 0
+        };
+        
+        let pokerHand = [];
+        let heldCards = [false, false, false, false, false];
+        let gamePhase = 'deal'; // 'deal' or 'draw'
+        
+        function loadGameState() {
+            const saved = localStorage.getItem('vetsRushGameState');
+            if (saved) {
+                gameState = JSON.parse(saved);
+            }
+            
+            // Update UI
+            document.getElementById('hero-coins').innerText = gameState.heroCoins.toLocaleString();
+            document.getElementById('valor-chips').innerText = gameState.valor || 0;
+            document.getElementById('player-name').innerText = 'PatriotVet69';
+        }
+        
+        function saveGameState() {
+            localStorage.setItem('vetsRushGameState', JSON.stringify(gameState));
+            
+            // Update main app if open
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ type: 'updateGameState', state: gameState }, '*');
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('hero-coins').innerText = gameState.heroCoins.toLocaleString();
+            document.getElementById('valor-chips').innerText = gameState.valor || 0;
+        }
+        
+        // Create a single card element
+        function createCardElement(card, index) {
+            const div = document.createElement('div');
+            div.className = `card ${card.suit === '♥' || card.suit === '♦' ? 'red' : 'black'} dealt`;
+            div.dataset.index = index;
+            
+            const rankDisplay = card.rank === '10' ? '10' : card.rank;
+            
+            div.innerHTML = `
+                <div class="text-[11px] font-bold absolute top-1 left-1.5">${rankDisplay}</div>
+                <div class="text-4xl">${card.suit}</div>
+                <div class="text-[11px] font-bold absolute bottom-1 right-1.5">${rankDisplay}</div>
+            `;
+            
+            // Hold toggle
+            div.onclick = () => toggleHold(index, div);
+            
+            return div;
+        }
+        
+        function toggleHold(index, cardElement) {
+            if (gamePhase !== 'draw') return;
+            
+            heldCards[index] = !heldCards[index];
+            
+            if (heldCards[index]) {
+                cardElement.classList.add('hold');
+            } else {
+                cardElement.classList.remove('hold');
+            }
+        }
+        
+        // Deal new hand
+        function dealHand() {
+            if (gameState.valor < 1) {
+                alert("You need at least 1 Valor Chip to play!");
+                return;
+            }
+            
+            // Consume 1 Valor Chip
+            gameState.valor--;
+            saveGameState();
+            updateUI();
+            
+            // Reset state
+            pokerHand = [];
+            heldCards = [false, false, false, false, false];
+            
+            const suits = ['♥', '♦', '♣', '♠'];
+            const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            
+            // Deal 5 new cards
+            for (let i = 0; i < 5; i++) {
+                const suit = suits[Math.floor(Math.random() * suits.length)];
+                const rank = ranks[Math.floor(Math.random() * ranks.length)];
+                pokerHand.push({ rank, suit });
+            }
+            
+            // Render cards
+            renderCards();
+            
+            gamePhase = 'draw';
+            document.getElementById('action-text').innerText = 'DRAW';
+            document.getElementById('action-icon').className = 'fa-solid fa-sync';
+            document.getElementById('hold-instruction').innerText = 'TAP CARDS TO HOLD • THEN DRAW';
+            
+            // Clear previous result
+            document.getElementById('result-area').classList.add('hidden');
+        }
+        
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            
+            pokerHand.forEach((card, i) => {
+                const cardEl = createCardElement(card, i);
+                
+                if (heldCards[i]) {
+                    cardEl.classList.add('hold');
+                }
+                
+                container.appendChild(cardEl);
+            });
+        }
+        
+        // Draw replacement cards for non-held
+        function drawCards() {
+            const suits = ['♥', '♦', '♣', '♠'];
+            const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            
+            for (let i = 0; i < 5; i++) {
+                if (!heldCards[i]) {
+                    const suit = suits[Math.floor(Math.random() * suits.length)];
+                    const rank = ranks[Math.floor(Math.random() * ranks.length)];
+                    pokerHand[i] = { rank, suit };
+                }
+            }
+            
+            renderCards();
+            
+            // Evaluate hand
+            const winAmount = evaluatePokerHand();
+            showResult(winAmount);
+            
+            gamePhase = 'deal';
+            document.getElementById('action-text').innerText = 'NEW DEAL';
+            document.getElementById('action-icon').className = 'fa-solid fa-play';
+            document.getElementById('hold-instruction').innerText = 'DEAL NEW HAND';
+        }
+        
+        // Main action button
+        function dealOrDraw() {
+            if (gamePhase === 'deal') {
+                dealHand();
+            } else {
+                drawCards();
+            }
+        }
+        
+        // Evaluate poker hand - FULL VERSION WITH STRAIGHT & FLUSH
+        function evaluatePokerHand() {
+            const ranks = pokerHand.map(c => c.rank);
+            const suits = pokerHand.map(c => c.suit);
+            
+            // Convert ranks to numbers
+            let rankValues = ranks.map(r => {
+                if (r === 'A') return 14;
+                if (r === 'K') return 13;
+                if (r === 'Q') return 12;
+                if (r === 'J') return 11;
+                return parseInt(r);
+            }).sort((a, b) => a - b);
+            
+            const counts = {};
+            ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+            const countValues = Object.values(counts);
+            
+            // Flush check
+            const isFlush = suits.every(s => s === suits[0]);
+            
+            // Straight check (including wheel A-5-4-3-2)
+            let isStraight = false;
+            const uniqueSorted = [...new Set(rankValues)].sort((a, b) => a - b);
+            
+            if (uniqueSorted.length === 5) {
+                if (uniqueSorted[4] - uniqueSorted[0] === 4) {
+                    isStraight = true;
+                } else if (uniqueSorted.join(',') === '2,3,4,5,14') { // wheel
+                    isStraight = true;
+                }
+            }
+            
+            // Royal Flush
+            if (isFlush && isStraight && 
+                rankValues.includes(14) && rankValues.includes(13) && 
+                rankValues.includes(12) && rankValues.includes(11) && rankValues.includes(10)) {
+                return 250;
+            }
+            
+            // Straight Flush
+            if (isFlush && isStraight) return 50;
+            
+            // Four of a Kind
+            if (countValues.includes(4)) return 25;
+            
+            // Full House
+            if (countValues.includes(3) && countValues.includes(2)) return 9;
+            
+            // Flush
+            if (isFlush) return 6;
+            
+            // Straight
+            if (isStraight) return 4;
+            
+            // Three of a Kind
+            if (countValues.includes(3)) return 3;
+            
+            // Two Pair
+            if (countValues.filter(c => c === 2).length === 2) return 2;
+            
+            // Jacks or Better
+            const pairRank = Object.keys(counts).find(r => counts[r] === 2);
+            if (pairRank && ['J', 'Q', 'K', 'A'].includes(pairRank)) return 1;
+            
+            return 0;
+        }
+        
+        function showResult(winAmount) {
+            const resultArea = document.getElementById('result-area');
+            const resultText = document.getElementById('result-text');
+            const resultSub = document.getElementById('result-subtext');
+            const rewardDiv = document.getElementById('reward-display');
+            
+            resultArea.classList.remove('hidden');
+            rewardDiv.innerHTML = '';
+            
+            if (winAmount > 0) {
+                // Calculate Hero Coins reward
+                const heroReward = winAmount * 100;
+                gameState.heroCoins += heroReward;
+                
+                // Small chance for bonus items on big wins
+                let bonusText = '';
+                if (winAmount >= 50) {
+                    gameState.stars = (gameState.stars || 0) + 1;
+                    bonusText = ' +1 ⭐ Star';
+                }
+                if (winAmount >= 250) {
+                    gameState.medals = (gameState.medals || 0) + 1;
+                    bonusText = ' +1 🎖️ Medal';
+                }
+                
+                saveGameState();
+                updateUI();
+                
+                resultText.innerHTML = `🎉 ${getHandName(winAmount)}!`;
+                resultText.className = 'text-2xl font-bold text-emerald-400 mb-1 result-win';
+                
+                resultSub.innerHTML = `+${winAmount} Valor Chips • +${heroReward} Hero Coins${bonusText}`;
+                resultSub.className = 'text-emerald-400';
+                
+                // Reward chips display
+                rewardDiv.innerHTML = `
+                    <div class="bg-emerald-900 px-4 py-1 rounded-full flex items-center gap-x-1 text-sm">
+                        <i class="fa-solid fa-dice"></i>
+                        <span>+${winAmount}</span>
+                    </div>
+                    <div class="bg-yellow-600 px-4 py-1 rounded-full flex items-center gap-x-1 text-sm text-black">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>+${heroReward}</span>
+                    </div>
+                `;
+                
+                // Big win animation
+                if (winAmount >= 50) {
+                    resultArea.classList.add('big-win');
+                    setTimeout(() => resultArea.classList.remove('big-win'), 800);
+                    
+                    // Confetti
+                    launchConfetti();
+                }
+            } else {
+                resultText.innerHTML = 'No win this round';
+                resultText.className = 'text-2xl font-bold text-slate-400 mb-1';
+                resultSub.innerHTML = 'Better luck next hand, Patriot!';
+                resultSub.className = 'text-slate-400';
+            }
+        }
+        
+        function getHandName(amount) {
+            if (amount === 250) return 'ROYAL FLUSH';
+            if (amount === 50) return 'STRAIGHT FLUSH';
+            if (amount === 25) return 'FOUR OF A KIND';
+            if (amount === 9) return 'FULL HOUSE';
+            if (amount === 6) return 'FLUSH';
+            if (amount === 4) return 'STRAIGHT';
+            if (amount === 3) return 'THREE OF A KIND';
+            if (amount === 2) return 'TWO PAIR';
+            if (amount === 1) return 'JACKS OR BETTER';
+            return 'WIN';
+        }
+        
+        function launchConfetti() {
+            const colors = ['#eab308', '#22c55e', '#ef4444', '#3b82f6'];
+            
+            for (let i = 0; i < 80; i++) {
+                setTimeout(() => {
+                    const conf = document.createElement('div');
+                    conf.style.position = 'fixed';
+                    conf.style.left = Math.random() * 100 + 'vw';
+                    conf.style.top = '-20px';
+                    conf.style.width = '10px';
+                    conf.style.height = '10px';
+                    conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    conf.style.zIndex = '9999';
+                    conf.style.pointerEvents = 'none';
+                    document.body.appendChild(conf);
+                    
+                    const duration = Math.random() * 3 + 2.5;
+                    conf.animate([
+                        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                        { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 800 - 200}deg)`, opacity: 0 }
+                    ], {
+                        duration: duration * 1000,
+                        easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+                    }).onfinish = () => conf.remove();
+                }, i * 3);
+            }
+        }
+        
+        function newRound() {
+            // Reset for new round
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            
+            document.getElementById('result-area').classList.add('hidden');
+            document.getElementById('action-text').innerText = 'DEAL';
+            document.getElementById('action-icon').className = 'fa-solid fa-play';
+            document.getElementById('hold-instruction').innerText = 'DEAL NEW HAND';
+            
+            gamePhase = 'deal';
+            heldCards = [false, false, false, false, false];
+            pokerHand = [];
+        }
+        
+        function returnToBase() {
+            saveGameState();
+            
+            // If opened from main app, just close
+            if (window.opener) {
+                window.close();
+            } else {
+                // Fallback - go back to main index
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Keyboard support
+        function initKeyboard() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Spacebar') {
+                    e.preventDefault();
+                    dealOrDraw();
+                }
+                
+                if (e.key.toLowerCase() === 'r') {
+                    newRound();
+                }
+            });
+            
+            // Touch / click anywhere on cards area to deal if ready
+            const cardsArea = document.getElementById('cards-container');
+            cardsArea.addEventListener('click', function(e) {
+                if (gamePhase === 'deal' && e.target.id === 'cards-container') {
+                    dealOrDraw();
+                }
+            });
+        }
+        
+        // Initialize everything
+        function initGame() {
+            initTailwind();
+            loadGameState();
+            
+            // Start with empty cards
+            const container = document.getElementById('cards-container');
+            container.innerHTML = `
+                <div class="text-center py-8 text-slate-500 w-full">
+                    <i class="fa-solid fa-dice text-4xl mb-3"></i>
+                    <div>Press DEAL to begin</div>
+                </div>
+            `;
+            
+            // Set initial button state
+            document.getElementById('action-text').innerText = 'DEAL';
+            document.getElementById('action-icon').className = 'fa-solid fa-play';
+            
+            initKeyboard();
+            
+            // Welcome message
+            setTimeout(() => {
+                if (gamePhase === 'deal') {
+                    const inst = document.getElementById('hold-instruction');
+                    if (inst) inst.innerText = 'TAP TO DEAL OR PRESS SPACE';
+                }
+            }, 1800);
+            
+            // Make sure state is saved on unload
+            window.addEventListener('beforeunload', saveGameState);
+            
+            console.log('%c[Valor Draw] Standalone game initialized with shared state', 'color:#64748b');
+        }
+        
+        // Boot the game
+        window.onload = initGame;
+    </script>
+</body>
+</html>
