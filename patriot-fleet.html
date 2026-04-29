@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PATRIOT FLEET • VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="game-state.js"></script>
+    <style>
+        body { font-family: 'Inter', system_ui, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); color: white; }
+        .fleet-cell {
+		    width: 38px; height: 38px;
+		    background: #1e2937;
+		    border: 3px solid #475569;
+		    border-radius: 10px;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    font-size: 1.45rem;
+		    cursor: pointer;
+		    transition: all 0.1s ease;
+		    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", "Segoe UI Symbol", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+		    font-feature-settings: "liga" 1, "kern" 1;
+		    text-rendering: optimizeLegibility;
+		    unicode-bidi: isolate;
+		    -webkit-font-smoothing: antialiased;
+		    -moz-osx-font-smoothing: grayscale;
+		}
+        .fleet-cell:hover { background: #334155; }
+        .fleet-cell.hit { background: #ef4444; border-color: #b91c1c; }
+        .fleet-cell.miss { background: #3b82f6; border-color: #1e40af; }
+        .fleet-cell.sunk { background: #eab308; border-color: #ca8a04; }
+        #fleet-reward-text {
+		    font-size: 1.35rem !important;
+		    line-height: 1.6 !important;
+		    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+		    text-shadow: 0 0 8px rgba(255,255,255,0.6) !important;
+		}
+		#fleet-reward-text {
+		    color: #ffffff !important;
+		    text-shadow: 0 0 12px rgba(255, 255, 255, 0.95) !important;
+		    font-size: 1.45rem !important;
+		    font-weight: 500 !important;
+		}
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+
+    <div class="bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-x-3">
+			<div class="text-4xl"></div>
+		    <div>
+		        <div class="font-bold text-2xl">PATRIOT FLEET</div>
+		        <div class="text-xs text-slate-400">LEVEL <span id="fleet-level">1</span> • Sink all subs</div>
+		    </div>
+		</div>
+        <div onclick="returnToBase()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-2xl flex items-center gap-x-2 text-sm cursor-pointer">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>RETURN TO BASE</span>
+        </div>
+    </div>
+
+    <div class="px-4 py-3 bg-slate-900 flex justify-between items-center border-b border-slate-700">
+        <div class="flex items-center gap-x-4">
+            <div class="text-sm">SHOTS LEFT: <span id="fleet-shots" class="font-bold text-yellow-400"></span></div>
+            <div class="text-sm text-emerald-400" id="fleet-sunk">SUNK: 0/3</div>
+        </div>
+        <div class="text-xs text-slate-400">Torpedoes from inventory</div>
+    </div>
+
+    <div class="max-w-md mx-auto p-4">
+        <div class="bg-slate-900 rounded-3xl p-4 border border-slate-700">
+            <div class="grid grid-cols-6 gap-2 mb-4" id="fleet-grid" style="max-width: 320px; margin: 0 auto;"></div>
+
+            <div id="fleet-complete" class="hidden text-center py-4">
+			    <div class="text-2xl font-bold text-emerald-400 mb-3">LEVEL COMPLETE!</div>
+			    
+			    <div class="space-y-3 text-xl" id="fleet-reward-text">
+			        <!-- These will be filled by JavaScript -->
+			    </div>
+			
+			    <button onclick="startNextLevel()" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-2xl">
+			        PLAY NEXT LEVEL
+			    </button>
+			</div>
+        </div>
+    </div>
+
+    <script>
+        let fleetLevel = 1;
+        let fleetSubs = [];
+        let fleetHits = 0;
+        let fleetShotsLeft = 9999;   // INFINITE TORPEDOES FOR TESTING
+        
+        function getGridSize() {
+		    if (fleetLevel <= 5) return 6;
+		    if (fleetLevel <= 10) return 7;
+		    return 8;
+		}
+		
+		function getTotalCells() {
+		    const size = getGridSize();
+		    return size * size;
+		}
+
+        function initPatriotFleet() {
+		    fleetShotsLeft = 9999;
+		    fleetHits = 0;
+		
+		    const size = getGridSize();
+		    const grid = document.getElementById('fleet-grid');
+		    grid.innerHTML = '';
+		    grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+		    
+		    // Perfect fit + slight left shift for 8x8
+		    if (size === 6) {
+		        grid.style.width = '330px';
+		        grid.style.gap = '5px';
+				grid.style.marginLeft = '-8px';   //  slight left shift
+		    } else if (size === 7) {
+		        grid.style.width = '310px';
+		        grid.style.gap = '4px';
+				grid.style.marginLeft = '-8px';   //  slight left shift
+		    } else {
+		        grid.style.width = '275px';
+		        grid.style.gap = '2px';
+		        grid.style.marginLeft = '-8px';   //  slight left shift
+		    }
+		
+		    for (let i = 0; i < getTotalCells(); i++) {
+		        const cell = document.createElement('div');
+		        cell.className = 'fleet-cell';
+		        cell.dataset.index = i;
+		        cell.onclick = () => fireTorpedo(i, cell);
+		        grid.appendChild(cell);
+		    }
+		
+		    placeSubs();
+		    updateFleetUI();
+		
+		    document.getElementById('fleet-level').innerText = fleetLevel;
+		    document.getElementById('fleet-complete').classList.add('hidden');
+		}
+
+        function placeSubs() {
+		    fleetSubs = [];
+		    const occupied = new Set();
+		    const size = getGridSize();
+		    let numSubs = 3 + Math.floor((fleetLevel - 1) / 2);
+		    if (numSubs > 8) numSubs = 8;
+		
+		    const getAdjacent = (idx) => {
+		        const row = Math.floor(idx / size);
+		        const col = idx % size;
+		        const adj = [];
+		        for (let dr = -1; dr <= 1; dr++) {
+		            for (let dc = -1; dc <= 1; dc++) {
+		                if (dr === 0 && dc === 0) continue;
+		                const r = row + dr;
+		                const c = col + dc;
+		                if (r >= 0 && r < size && c >= 0 && c < size) {
+		                    adj.push(r * size + c);
+		                }
+		            }
+		        }
+		        return adj;
+		    };
+		
+		    for (let s = 0; s < numSubs; s++) {
+		        let placed = false;
+		        let attempts = 0;
+		        while (!placed && attempts < 800) {
+		            attempts++;
+		            const length = (s % 2 === 0) ? 3 : 2;
+		            const isHorizontal = Math.random() > 0.5;
+		
+		            let startRow, startCol;
+		            if (isHorizontal) {
+		                startRow = Math.floor(Math.random() * size);
+		                startCol = Math.floor(Math.random() * (size - length + 1));
+		            } else {
+		                startRow = Math.floor(Math.random() * (size - length + 1));
+		                startCol = Math.floor(Math.random() * size);
+		            }
+		
+		            const positions = [];
+		            let valid = true;
+		
+		            for (let k = 0; k < length; k++) {
+		                const idx = isHorizontal 
+		                    ? startRow * size + (startCol + k) 
+		                    : (startRow + k) * size + startCol;
+		
+		                if (occupied.has(idx)) {
+		                    valid = false;
+		                    break;
+		                }
+		                positions.push(idx);
+		            }
+		
+		            if (valid) {
+		                let tooClose = false;
+		                for (let p of positions) {
+		                    for (let a of getAdjacent(p)) {
+		                        if (occupied.has(a)) {
+		                            tooClose = true;
+		                            break;
+		                        }
+		                    }
+		                    if (tooClose) break;
+		                }
+		
+		                if (!tooClose) {
+		                    positions.forEach(p => occupied.add(p));
+		                    fleetSubs.push({ positions, hits: 0, length });
+		                    placed = true;
+		                }
+		            }
+		        }
+		    }
+		}
+
+        function getAdjacentCells(pos) {
+            const row = Math.floor(pos / 6);
+            const col = pos % 6;
+            const neighbors = [];
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const r = row + dr, c = col + dc;
+                    if (r >= 0 && r < 6 && c >= 0 && c < 6) neighbors.push(r * 6 + c);
+                }
+            }
+            return neighbors;
+        }
+
+        function fireTorpedo(index, cell) {
+		    if (fleetShotsLeft <= 0) return;
+		
+		    fleetShotsLeft--;
+		    document.getElementById('fleet-shots').innerText = fleetShotsLeft;
+		
+		    if (window.VetsRush && typeof window.VetsRush.spend === 'function') {
+		        window.VetsRush.spend('torpedoes', 1);
+		    }
+		
+		    let hit = false;
+		    for (let sub of fleetSubs) {
+		        if (sub.positions.includes(index) && sub.hits < sub.length) {
+		            hit = true;
+		            sub.hits++;
+		
+		            if (sub.hits === sub.length) {
+		                sub.positions.forEach(p => {
+		                    const c = document.querySelector(`[data-index="${p}"]`);
+		                    if (c) {
+		                        c.innerHTML = '\uD83D\uDCA5';
+		                        c.style.cssText = 'font-size:2.8rem;line-height:1;display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:0 0 8px #fff;background:transparent;';
+		                    }
+		                });
+		                fleetHits++;
+		            } else {
+		                cell.innerHTML = '\uD83D\uDD25';
+		                cell.style.cssText = 'font-size:2.8rem;line-height:1;display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:0 0 8px #fff;background:transparent;';
+		            }
+		            break;
+		        }
+		    }
+		
+		    if (!hit) {
+		        cell.innerHTML = '\uD83C\uDF0A';
+		        cell.style.cssText = 'font-size:2.8rem;line-height:1;display:flex;align-items:center;justify-content:center;color:#fff;text-shadow:0 0 8px #fff;background:transparent;';
+		    }
+		
+		    updateFleetUI();
+		
+		    if (fleetHits >= fleetSubs.length) {
+		        setTimeout(() => completeLevel(), 500);
+		    }
+		}
+
+        function updateFleetUI() {
+		    document.getElementById('fleet-shots').innerText = fleetShotsLeft;
+		    document.getElementById('fleet-sunk').innerText = "SUNK: " + fleetHits + "/" + fleetSubs.length;
+		}
+
+        function completeLevel() {
+		    const reward = 8500 + (fleetLevel * 2500) + (fleetShotsLeft * 300);
+		    const stars = Math.floor(fleetLevel / 2) + 1;
+		    const torpedoes = Math.floor(fleetLevel / 3) + 1;
+		
+		    const completeScreen = document.getElementById('fleet-complete');
+		    const rewardText = document.getElementById('fleet-reward-text');
+		
+		    completeScreen.classList.remove('hidden');
+		    
+		    rewardText.innerHTML = "Excellent work, Patriot!<br>+" + 
+	                       reward.toLocaleString() + " \uD83E\uDE99 Hero Coins<br>+" + 
+	                       stars + " \u2B50 +" + 
+	                       torpedoes + "x \uD83E\uDDE8";
+			}
+
+        function startNextLevel() {
+		    fleetLevel++;
+		    fleetHits = 0;
+		    fleetShotsLeft = 9999;   //  ADD THIS LINE
+		    document.getElementById('fleet-level').innerText = fleetLevel;
+		    document.getElementById('fleet-complete').classList.add('hidden');
+		    initPatriotFleet();
+		}
+
+        function returnToBase() {
+            if (window.VetsRush && typeof window.VetsRush.saveGame === 'function') {
+                window.VetsRush.saveGame();
+            }
+            window.location.href = 'https://s-rush.vercel.app/';
+        }
+
+        window.onload = function() {
+            initPatriotFleet();
+        };
+    </script>
+</body>
+</html>
