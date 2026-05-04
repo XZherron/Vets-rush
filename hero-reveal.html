@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>HERO REVEAL • VETS RUSH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Press+Start+2P&amp;display=swap');
+        
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); 
+            color: white; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .resource-pill {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 9999px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .reward-emoji {
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+        
+        .reveal-board {
+            position: relative;
+            width: 340px;
+            height: 340px;
+            margin: 0 auto;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 3px solid #334155;
+            background: #020617;
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.3),
+                        0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+        
+        .plane-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.85) saturate(1.1);
+        }
+        
+        .reveal-grid {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            gap: 4px;
+            padding: 6px;
+            background: rgba(2, 6, 23, 0.15);
+        }
+        
+        .reveal-tile {
+            background: linear-gradient(135deg, #1e293b, #020617);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #e2e8f0;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1),
+                        0 4px 6px -1px rgb(0 0 0 / 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .reveal-tile:hover {
+            transform: scale(1.03);
+            border-color: #64748b;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        
+        .reveal-tile:active {
+            transform: scale(0.97);
+        }
+        
+        .reveal-tile.unlocked {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        
+        .reveal-tile .cost-text {
+            font-size: 0.65rem;
+            line-height: 1.1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        }
+        
+        .plane-header {
+            background: linear-gradient(to right, #1e2937, #334155);
+            border-bottom: 2px solid #475569;
+        }
+        
+        .stat-value {
+            font-family: 'Press Start 2P', system-ui;
+            font-size: 1.05rem;
+            line-height: 1;
+        }
+        
+        .plane-card {
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .plane-card.locked {
+            opacity: 0.5;
+            filter: grayscale(0.8);
+        }
+        
+        .plane-card.unlocked:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgb(16 185 129 / 0.2);
+        }
+        
+        .glow-green {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+    <!-- HEADER -->
+    <div class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-lg border-b border-slate-700">
+        <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-plane text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tighter">HERO REVEAL</h1>
+                    <p class="text-[10px] text-emerald-400 -mt-1">UNLOCK THE FLEET</p>
+                </div>
+            </div>
+            
+            <button onclick="returnToBase()" 
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-2xl text-sm font-semibold flex items-center gap-x-2 border border-slate-600">
+                <i class="fas fa-arrow-left mr-1"></i>
+                <span>BASE</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- RESOURCE BAR -->
+    <div class="max-w-2xl mx-auto px-4 pt-4">
+        <div class="flex flex-wrap justify-center gap-2" id="resource-bar">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- CURRENT PLANE -->
+    <div class="max-w-2xl mx-auto px-4 pt-6 pb-2">
+        <div class="flex items-end justify-between mb-3 px-1">
+            <div>
+                <div class="flex items-center gap-x-2">
+                    <span id="plane-name" class="text-3xl font-black tracking-tighter">F4U CORSAIR</span>
+                    <span id="plane-status" 
+                          class="px-3 py-0.5 text-xs font-bold bg-emerald-500/20 text-emerald-400 rounded-full">4×4 GRID</span>
+                </div>
+                <p class="text-slate-400 text-sm">WWII Naval Legend • 16 pieces</p>
+            </div>
+            
+            <div class="text-right">
+                <div class="text-xs text-slate-500">PROGRESS</div>
+                <div id="progress-text" class="font-mono text-2xl font-black text-emerald-400">0/16</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REVEAL BOARD -->
+    <div class="max-w-2xl mx-auto px-4">
+        <div id="reveal-board" class="reveal-board mx-auto mb-4">
+            <img id="plane-image" 
+                 src="https://picsum.photos/id/1015/340/340" 
+                 alt="Corsair" 
+                 class="plane-image">
+            <div id="reveal-grid" class="reveal-grid"></div>
+        </div>
+        
+        <!-- Completion Banner (hidden by default) -->
+        <div id="completion-banner" class="hidden mx-auto max-w-[340px] mb-4 px-4 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-3xl text-center">
+            <div class="flex items-center justify-center gap-x-2 text-emerald-400">
+                <i class="fas fa-check-circle text-xl"></i>
+                <span class="font-bold">PLANE FULLY UNLOCKED!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLANE SELECTOR -->
+    <div class="max-w-2xl mx-auto px-4 pt-2">
+        <div class="flex items-center justify-between mb-3 px-1">
+            <span class="text-xs font-bold tracking-widest text-slate-400">YOUR FLEET</span>
+            <span class="text-xs text-emerald-400 font-mono" id="unlocked-count">1 / 5</span>
+        </div>
+        
+        <div id="plane-selector" class="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+            <!-- Populated dynamically by JS -->
+        </div>
+    </div>
+
+    <!-- TIPS -->
+    <div class="max-w-2xl mx-auto px-4 pt-4">
+        <div class="bg-slate-800/50 border border-slate-700 rounded-3xl p-4 text-xs text-slate-400">
+            <div class="flex items-start gap-3">
+                <i class="fas fa-info-circle text-emerald-400 mt-0.5"></i>
+                <div>
+                    Click tiles to reveal pieces using your resources.<br>
+                    Complete a plane to unlock it in <span class="font-semibold text-white">Eagle Strike</span>!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game-state.js"></script>
+    <script>
+        // ===== TAILWIND CONFIG =====
+        function initTailwind() {
+            document.documentElement.style.setProperty('--accent', '#10b981');
+        }
+        
+        // ===== RESOURCE ICONS (ENTITIES - FIXES ENCODING) =====
+        const resourceIcons = {
+            heroCoins: "&#x1FA99;",
+            stars: "&#x2B50;",
+            shields: "&#x1F6E1;&#xFE0F;",
+            medals: "&#x1F3C5;",
+            flags: "&#x1F1FA;&#x1F1F8;",
+            helmets: "&#x1FA96;",
+            homes: "&#x1F3E0;",
+            beds: "&#x1F6CF;&#xFE0F;"
+        };
+        
+        const resourceNames = {
+            heroCoins: "Coins",
+            stars: "Stars",
+            shields: "Shields",
+            medals: "Medals",
+            flags: "Flags",
+            helmets: "Helmets",
+            homes: "Homes",
+            beds: "Beds"
+        };
+        
+        // ===== PLANE DATA =====
+        const planeData = [
+            {
+                id: "corsair",
+                name: "F4U CORSAIR",
+                subtitle: "WWII Naval Legend",
+                image: "https://picsum.photos/id/1015/340/340",
+                size: 16,
+                color: "#10b981"
+            },
+            {
+                id: "a10_warthog",
+                name: "A-10 WARTHOG",
+                subtitle: "Tank Buster",
+                image: "https://picsum.photos/id/106/340/340",
+                size: 16,
+                color: "#f59e0b"
+            },
+            {
+                id: "f16_falcon",
+                name: "F-16 FALCON",
+                subtitle: "Multirole Viper",
+                image: "https://picsum.photos/id/1074/340/340",
+                size: 25,
+                color: "#3b82f6"
+            },
+            {
+                id: "f22_raptor",
+                name: "F-22 RAPTOR",
+                subtitle: "Stealth Dominance",
+                image: "https://picsum.photos/id/160/340/340",
+                size: 25,
+                color: "#8b5cf6"
+            },
+            {
+                id: "f35_lightning",
+                name: "F-35 LIGHTNING",
+                subtitle: "5th Gen Strike",
+                image: "https://picsum.photos/id/201/340/340",
+                size: 36,
+                color: "#ec4899"
+            }
+        ];
+        
+        // ===== HERO REVEAL STATE =====
+        let heroRevealState = JSON.parse(localStorage.getItem('heroRevealState')) || {
+            currentPlane: "corsair",
+            unlockedTiles: {},
+            unlockedPlanes: []
+        };
+        
+        // Ensure arrays exist
+        if (!heroRevealState.unlockedTiles) heroRevealState.unlockedTiles = {};
+        if (!heroRevealState.unlockedPlanes) heroRevealState.unlockedPlanes = [];
+        
+        function saveHeroReveal() {
+            localStorage.setItem('heroRevealState', JSON.stringify(heroRevealState));
+        }
+        
+        // ===== GAME STATE HELPERS (ADAPTED TO VETS RUSH) =====
+        function getGameState() {
+            if (window.VetsRush && window.VetsRush.game) {
+                return window.VetsRush.game;
+            }
+            return window.game || {};
+        }
+        
+        function canAfford(cost) {
+            const gs = getGameState();
+            return Object.keys(cost).every(resource => {
+                const current = gs[resource] || 0;
+                return current >= (cost[resource] || 0);
+            });
+        }
+        
+        function spendCost(cost) {
+            const gs = getGameState();
+            Object.keys(cost).forEach(resource => {
+                if (gs[resource] !== undefined) {
+                    gs[resource] -= (cost[resource] || 0);
+                }
+            });
+            
+            // Save via VetsRush if available
+            if (window.VetsRush && window.VetsRush.saveGame) {
+                window.VetsRush.saveGame(gs);
+            } else if (window.saveGameState) {
+                window.saveGameState();
+            }
+            
+            updateResourceBar();
+        }
+        
+        // ===== TILE COST SYSTEM =====
+        function getTileCost(planeId, index) {
+            const costs = [
+                { heroCoins: 2500 },
+                { stars: 2 },
+                { shields: 1 },
+                { medals: 1 },
+                { flags: 1 },
+                { helmets: 1 },
+                { homes: 1 },
+                { beds: 1 }
+            ];
+            return costs[index % costs.length];
+        }
+        
+        // ===== GRID SIZE =====
+        function getPlaneTileCount(planeId) {
+            const plane = planeData.find(p => p.id === planeId);
+            return plane ? plane.size : 16;
+        }
+        
+        // ===== ICON HELPER =====
+        function getIcon(resource) {
+            return resourceIcons[resource] || "•";
+        }
+        
+        // ===== BUILD RESOURCE BAR =====
+        function updateResourceBar() {
+            const container = document.getElementById('resource-bar');
+            if (!container) return;
+            
+            const gs = getGameState();
+            const resources = ['heroCoins', 'stars', 'shields', 'medals', 'flags', 'helmets', 'homes', 'beds'];
+            
+            container.innerHTML = resources.map(res => {
+                const val = (gs[res] || 0).toLocaleString();
+                const icon = getIcon(res);
+                const name = resourceNames[res] || res;
+                
+                return `
+                    <div class="resource-pill">
+                        <span class="reward-emoji">${icon}</span>
+                        <span class="font-bold text-white">${val}</span>
+                        <span class="text-[10px] text-slate-400">${name}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ===== UNLOCK TILE (CORE) =====
+        function unlockTile(planeId, tileIndex, cost, tileElement) {
+            if (!canAfford(cost)) {
+                const msg = document.createElement('div');
+                msg.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-2 rounded-2xl text-sm font-semibold shadow-xl z-[100]';
+                msg.textContent = "Not enough resources!";
+                document.body.appendChild(msg);
+                
+                setTimeout(() => {
+                    msg.style.transition = 'all 0.3s';
+                    msg.style.opacity = '0';
+                    msg.style.transform = 'translate(-50%, 20px)';
+                    setTimeout(() => msg.remove(), 300);
+                }, 1200);
+                return;
+            }
+            
+            spendCost(cost);
+            
+            if (!heroRevealState.unlockedTiles[planeId]) {
+                heroRevealState.unlockedTiles[planeId] = [];
+            }
+            
+            if (!heroRevealState.unlockedTiles[planeId].includes(tileIndex)) {
+                heroRevealState.unlockedTiles[planeId].push(tileIndex);
+            }
+            
+            // Reveal animation
+            tileElement.classList.add('unlocked');
+            tileElement.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+            tileElement.style.transform = 'scale(0.8)';
+            
+            setTimeout(() => {
+                tileElement.innerHTML = '';
+                tileElement.style.transform = 'scale(1)';
+            }, 150);
+            
+            checkPlaneComplete(planeId);
+            saveHeroReveal();
+            updateProgress(planeId);
+            
+            // Optional: small particle burst on reveal
+            createRevealParticles(tileElement);
+        }
+        
+        function createRevealParticles(element) {
+            const rect = element.getBoundingClientRect();
+            for (let i = 0; i < 6; i++) {
+                const p = document.createElement('div');
+                p.className = 'absolute w-1.5 h-1.5 bg-emerald-400 rounded-full pointer-events-none';
+                p.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                p.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                p.style.zIndex = '9999';
+                document.body.appendChild(p);
+                
+                const dx = (Math.random() - 0.5) * 60;
+                const dy = (Math.random() - 0.5) * 60 - 30;
+                
+                p.animate([
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                    { transform: `translate(${dx}px, ${dy}px) scale(0.2)`, opacity: 0 }
+                ], {
+                    duration: 450 + Math.random() * 200,
+                    easing: 'ease-out'
+                }).onfinish = () => p.remove();
+            }
+        }
+        
+        // ===== CHECK PLANE COMPLETE =====
+        function checkPlaneComplete(planeId) {
+            const totalTiles = getPlaneTileCount(planeId);
+            const unlocked = heroRevealState.unlockedTiles[planeId]?.length || 0;
+            
+            if (unlocked >= totalTiles) {
+                if (!heroRevealState.unlockedPlanes.includes(planeId)) {
+                    heroRevealState.unlockedPlanes.push(planeId);
+                    
+                    // Also update main game state
+                    const gs = getGameState();
+                    if (!gs.unlockedPlanes) gs.unlockedPlanes = [];
+                    if (!gs.unlockedPlanes.includes(planeId)) {
+                        gs.unlockedPlanes.push(planeId);
+                    }
+                    
+                    if (window.VetsRush && window.VetsRush.saveGame) {
+                        window.VetsRush.saveGame(gs);
+                    }
+                    
+                    // Celebration
+                    showPlaneComplete(planeId);
+                }
+            }
+        }
+        
+        function showPlaneComplete(planeId) {
+            const banner = document.getElementById('completion-banner');
+            const plane = planeData.find(p => p.id === planeId);
+            
+            if (banner && plane) {
+                banner.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-1">
+                        <div class="flex items-center gap-x-3">
+                            <i class="fas fa-tachometer-alt text-3xl text-emerald-400"></i>
+                            <div>
+                                <div class="font-black text-xl tracking-tighter text-emerald-300">${plane.name}</div>
+                                <div class="text-xs text-emerald-400 -mt-1">NOW AVAILABLE IN EAGLE STRIKE</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                banner.classList.remove('hidden');
+                banner.classList.add('glow-green', 'animate-pulse');
+                
+                // Confetti
+                launchConfetti(80);
+                
+                setTimeout(() => {
+                    banner.classList.remove('animate-pulse');
+                }, 2400);
+                
+                // Auto hide after 4s
+                setTimeout(() => {
+                    banner.style.transition = 'all 0.5s';
+                    banner.style.opacity = '0';
+                    setTimeout(() => {
+                        banner.style.opacity = '1';
+                        banner.style.transition = '';
+                        banner.classList.add('hidden');
+                        banner.classList.remove('glow-green');
+                    }, 500);
+                }, 4200);
+            }
+            
+            // Refresh plane selector
+            setTimeout(buildPlaneSelector, 800);
+        }
+        
+        function launchConfetti(count = 60) {
+            const colors = ['#10b981', '#34d399', '#fbbf24', '#f472b6'];
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    c.style.width = (6 + Math.random() * 7) + 'px';
+                    c.style.height = c.style.width;
+                    c.style.animationDuration = (1.8 + Math.random() * 1.4) + 's';
+                    c.style.opacity = Math.random() * 0.6 + 0.6;
+                    document.body.appendChild(c);
+                    
+                    setTimeout(() => c.remove(), 4200);
+                }, i * 0.6);
+            }
+        }
+        
+        // ===== BUILD THE BOARD =====
+        function buildBoard(planeId) {
+            const grid = document.getElementById('reveal-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(4, 1fr)`;
+            
+            const total = getPlaneTileCount(planeId);
+            const size = Math.sqrt(total);
+            if (size === 5) grid.style.gridTemplateColumns = `repeat(5, 1fr)`;
+            if (size === 6) grid.style.gridTemplateColumns = `repeat(6, 1fr)`;
+            
+            const unlockedSet = new Set(heroRevealState.unlockedTiles[planeId] || []);
+            
+            for (let i = 0; i < total; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'reveal-tile';
+                
+                const cost = getTileCost(planeId, i);
+                
+                if (unlockedSet.has(i)) {
+                    tile.classList.add('unlocked');
+                    tile.innerHTML = '';
+                } else {
+                    tile.innerHTML = `
+                        <div class="cost-text px-1">
+                            ${Object.keys(cost).map(r => {
+                                return `<div class="flex items-center justify-center gap-0.5"><span>${getIcon(r)}</span><span class="font-mono">${cost[r]}</span></div>`;
+                            }).join('')}
+                        </div>
+                    `;
+                    
+                    tile.onclick = () => {
+                        unlockTile(planeId, i, cost, tile);
+                    };
+                }
+                
+                grid.appendChild(tile);
+            }
+            
+            // Update image
+            const img = document.getElementById('plane-image');
+            const plane = planeData.find(p => p.id === planeId);
+            if (img && plane) {
+                img.src = plane.image;
+                img.alt = plane.name;
+            }
+            
+            updateProgress(planeId);
+        }
+        
+        function updateProgress(planeId) {
+            const total = getPlaneTileCount(planeId);
+            const unlocked = heroRevealState.unlockedTiles[planeId]?.length || 0;
+            
+            const progressEl = document.getElementById('progress-text');
+            if (progressEl) {
+                progressEl.textContent = `${unlocked}/${total}`;
+                
+                if (unlocked >= total) {
+                    progressEl.classList.add('text-emerald-400');
+                } else {
+                    progressEl.classList.remove('text-emerald-400');
+                }
+            }
+            
+            // Update status badge
+            const statusEl = document.getElementById('plane-status');
+            if (statusEl) {
+                const plane = planeData.find(p => p.id === planeId);
+                if (plane) {
+                    statusEl.textContent = `${Math.sqrt(total)}×${Math.sqrt(total)} GRID`;
+                    if (unlocked >= total) {
+                        statusEl.className = 'px-3 py-0.5 text-xs font-bold bg-emerald-500 text-white rounded-full';
+                        statusEl.textContent = 'UNLOCKED ✓';
+                    }
+                }
+            }
+        }
+        
+        // ===== BUILD PLANE SELECTOR =====
+        function buildPlaneSelector() {
+            const container = document.getElementById('plane-selector');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            const unlockedCount = heroRevealState.unlockedPlanes.length;
+            document.getElementById('unlocked-count').textContent = `${unlockedCount + 1} / 5`; // +1 for corsair start
+            
+            planeData.forEach(plane => {
+                const isUnlocked = heroRevealState.unlockedPlanes.includes(plane.id);
+                const isCurrent = heroRevealState.currentPlane === plane.id;
+                const unlockedTiles = heroRevealState.unlockedTiles[plane.id]?.length || 0;
+                const total = plane.size;
+                const progress = Math.round((unlockedTiles / total) * 100);
+                
+                const card = document.createElement('div');
+                card.className = `plane-card flex-shrink-0 w-[118px] snap-center rounded-3xl overflow-hidden border ${isCurrent ? 'border-emerald-400 ring-2 ring-emerald-400/30' : 'border-slate-700'} ${isUnlocked ? 'unlocked' : 'locked'}`;
+                
+                card.innerHTML = `
+                    <div class="relative h-[92px]">
+                        <img src="${plane.image}" class="w-full h-full object-cover" alt="${plane.name}">
+                        
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                        
+                        ${isUnlocked ? `
+                            <div class="absolute top-2 right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-px rounded">READY</div>
+                        ` : unlockedTiles > 0 ? `
+                            <div class="absolute bottom-2 left-2 right-2 h-1 bg-white/20 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-400 transition-all" style="width: ${progress}%"></div>
+                            </div>
+                        ` : `
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="bg-black/60 px-3 py-1 rounded-2xl text-[10px] font-bold flex items-center gap-1">
+                                    <i class="fas fa-lock text-xs"></i>
+                                    <span>LOCKED</span>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                    
+                    <div class="px-3 py-2 bg-slate-900">
+                        <div class="text-[13px] font-bold leading-none tracking-tight">${plane.name.split(' ')[0]}</div>
+                        <div class="text-[10px] text-slate-400 -mt-px">${plane.subtitle.split(' ')[0]}</div>
+                        
+                        <div class="mt-1.5 flex items-center justify-between text-[10px]">
+                            <span class="font-mono text-emerald-400">${unlockedTiles}/${total}</span>
+                            ${isCurrent ? `<span class="text-emerald-400"><i class="fas fa-check text-xs"></i></span>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                if (isUnlocked || isCurrent) {
+                    card.onclick = () => {
+                        switchToPlane(plane.id);
+                    };
+                } else {
+                    card.onclick = () => {
+                        const msg = document.createElement('div');
+                        msg.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 px-5 py-2 rounded-2xl text-xs flex items-center gap-2 shadow-xl z-[200]';
+                        msg.innerHTML = `<span>Complete previous planes to unlock</span>`;
+                        document.body.appendChild(msg);
+                        setTimeout(() => {
+                            msg.style.transition = 'opacity 0.25s';
+                            msg.style.opacity = '0';
+                            setTimeout(() => msg.remove(), 200);
+                        }, 1400);
+                    };
+                }
+                
+                container.appendChild(card);
+            });
+        }
+        
+        function switchToPlane(planeId) {
+            const plane = planeData.find(p => p.id === planeId);
+            if (!plane) return;
+            
+            const isUnlocked = heroRevealState.unlockedPlanes.includes(planeId);
+            const isCurrent = heroRevealState.currentPlane === planeId;
+            
+            if (!isUnlocked && !isCurrent && heroRevealState.unlockedPlanes.length === 0 && planeId !== "corsair") {
+                // First plane only
+                alert("Finish the Corsair first!");
+                return;
+            }
+            
+            heroRevealState.currentPlane = planeId;
+            saveHeroReveal();
+            
+            // Update UI
+            document.getElementById('plane-name').textContent = plane.name;
+            
+            const status = document.getElementById('plane-status');
+            if (status) {
+                const size = Math.sqrt(plane.size);
+                status.textContent = `${size}×${size} GRID`;
+                status.className = `px-3 py-0.5 text-xs font-bold ${isUnlocked ? 'bg-emerald-500 text-white' : 'bg-emerald-500/20 text-emerald-400'} rounded-full`;
+            }
+            
+            // Rebuild board
+            buildBoard(planeId);
+            
+            // Update selector highlight
+            buildPlaneSelector();
+        }
+        
+        // ===== INITIALIZE EVERYTHING =====
+        function initHeroReveal() {
+            initTailwind();
+            
+            // Make sure game state is loaded
+            if (window.VetsRush && window.VetsRush.loadGameState) {
+                window.VetsRush.loadGameState();
+            }
+            
+            // Update resources
+            updateResourceBar();
+            
+            // Set initial plane
+            const current = heroRevealState.currentPlane || "corsair";
+            const plane = planeData.find(p => p.id === current) || planeData[0];
+            
+            document.getElementById('plane-name').textContent = plane.name;
+            
+            const statusEl = document.getElementById('plane-status');
+            if (statusEl) {
+                const size = Math.sqrt(plane.size);
+                statusEl.textContent = `${size}×${size} GRID`;
+            }
+            
+            // Build board for current plane
+            buildBoard(current);
+            
+            // Build plane selector
+            buildPlaneSelector();
+            
+            // Initial progress
+            updateProgress(current);
+            
+            // Keyboard support
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'r' || e.key === 'R') {
+                    const currentPlane = heroRevealState.currentPlane;
+                    buildBoard(currentPlane);
+                }
+            });
+            
+            // Auto-save on visibility change
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    saveHeroReveal();
+                }
+            });
+            
+            // Welcome toast for first time
+            if (!localStorage.getItem('heroRevealSeen')) {
+                setTimeout(() => {
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 border border-emerald-500/30 px-6 py-3 rounded-3xl text-sm shadow-2xl flex items-center gap-3 z-[300]';
+                    toast.innerHTML = `
+                        <div class="text-emerald-400"><i class="fas fa-rocket"></i></div>
+                        <div>
+                            <span class="font-semibold">Tip:</span> Reveal tiles to unlock full aircraft for Eagle Strike!
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        toast.style.transition = 'all 0.4s';
+                        toast.style.opacity = '0';
+                        toast.style.transform = 'translate(-50%, 30px)';
+                        setTimeout(() => toast.remove(), 400);
+                    }, 3800);
+                }, 2200);
+                
+                localStorage.setItem('heroRevealSeen', 'true');
+            }
+            
+            // Expose for debugging / future integration
+            window.HeroReveal = {
+                state: heroRevealState,
+                rebuild: () => buildBoard(heroRevealState.currentPlane),
+                unlockAll: () => {
+                    const p = heroRevealState.currentPlane;
+                    const total = getPlaneTileCount(p);
+                    heroRevealState.unlockedTiles[p] = Array.from({length: total}, (_, i) => i);
+                    saveHeroReveal();
+                    buildBoard(p);
+                }
+            };
+            
+            console.log('%c[Hero Reveal] Rebuilt & initialized successfully', 'color:#10b981');
+        }
+        
+        function returnToBase() {
+            saveHeroReveal();
+            // Try to go back or to index
+            if (document.referrer && document.referrer.includes('index')) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Boot
+        window.addEventListener('load', () => {
+            // Ensure game-state.js is loaded
+            setTimeout(() => {
+                if (typeof window.VetsRush === 'undefined') {
+                    console.warn('VetsRush not found - using fallback game state');
+                    window.game = window.game || { heroCoins: 500000, stars: 12, shields: 5, medals: 3, flags: 4, helmets: 2, homes: 8, beds: 6 };
+                }
+                initHeroReveal();
+            }, 80);
+        });
+        
+        // Also update resources if VetsRush fires events (future proof)
+        document.addEventListener('vetsrush:update', () => {
+            updateResourceBar();
+        });
+    </script>
+</body>
+</html>

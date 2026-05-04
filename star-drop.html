@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Star Drop Test</title>
+
+<style>
+/* ===============================
+   CSS / VISUAL STYLING - START
+   =============================== */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    background: #050805;
+    color: #00ff00;
+    font-family: system-ui, monospace;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+}
+
+#app {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    background: radial-gradient(circle at top, #071322, #01040a 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.screen {
+    width: min(94vw, 430px);
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    background: linear-gradient(180deg, #020b12 0%, #04111a 55%, #031018 100%);
+    border: 4px solid #5f6f8f;
+    box-shadow:
+        0 0 0 2px #1a2740 inset,
+        0 0 18px rgba(80, 140, 255, 0.18),
+        0 0 30px rgba(0, 180, 255, 0.10);
+    box-sizing: border-box;
+    padding: 12px;
+    overflow: hidden;
+    text-align: center;
+    border-radius: 8px;
+}
+
+#menu-screen {
+    background:
+        linear-gradient(rgba(2, 8, 18, 0.42), rgba(2, 8, 18, 0.72)),
+        url('star-drop-menu-bg.png') center center / cover no-repeat;
+}
+
+#menu-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    padding: 36px 20px 48px;
+}
+
+#menu-screen > * {
+    width: 100%;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hidden {
+    display: none !important;
+}
+
+h1 {
+    margin: 8px 0 4px;
+    font-size: 28px;
+    color: #facc15;
+    text-shadow:
+        0 0 8px rgba(250, 204, 21, 0.85),
+        0 0 18px rgba(245, 158, 11, 0.45);
+}
+
+.subtitle {
+    font-size: 12px;
+    color: #ffff66;
+    margin-bottom: 12px;
+}
+
+button {
+    width: 86%;
+    max-width: 320px;
+    min-height: 48px;
+    margin: 10px auto;
+    padding: 9px 10px;
+    display: block;
+    background: linear-gradient(180deg, #101827 0%, #0b1220 100%);
+    color: #f8fafc;
+    border: 3px solid #6f85b8;
+    box-shadow:
+        0 0 10px rgba(90, 160, 255, 0.16),
+        inset 0 1px 0 rgba(255,255,255,0.16);
+    font-weight: 900;
+    font-size: 15px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+.primary-action:active {
+    background: linear-gradient(180deg, #fff7b1 0%, #facc15 45%, #92400e 100%);
+    color: #111827;
+    box-shadow:
+        0 0 14px rgba(250, 204, 21, 0.55),
+        inset 0 2px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -4px 0 rgba(120, 53, 15, 0.45);
+}
+
+#star-drop-screen h1 {
+    margin: 6px 0 2px;
+    font-size: clamp(26px, 7vw, 38px);
+    color: #facc15;
+    text-shadow:
+        0 0 8px rgba(250, 204, 21, 0.85),
+        0 0 18px rgba(245, 158, 11, 0.45);
+}
+
+#star-drop-screen .subtitle {
+    margin-bottom: 8px;
+    font-size: clamp(12px, 3.3vw, 16px);
+}
+
+#star-drop-status {
+    margin: 6px auto 8px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#plinko-canvas {
+    width: 100%;
+    max-width: 390px;
+    height: auto;
+    max-height: 58dvh;
+    object-fit: contain;
+    background: #0f172a;
+    border: 3px solid #334155;
+    box-sizing: border-box;
+    display: block;
+    margin: 8px auto;
+}
+
+.inventory-box {
+    background: rgba(2, 8, 18, 0.92);
+    border: 3px solid #5f6f8f;
+    box-shadow:
+        0 0 0 2px #1a2740 inset,
+        0 0 14px rgba(80, 140, 255, 0.18);
+    padding: 12px 16px;
+    margin: 14px auto;
+    text-align: left;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #facc15;
+    width: 86%;
+    max-width: 330px;
+    box-sizing: border-box;
+}
+
+#toast {
+    min-height: 32px;
+    margin: 6px auto;
+    color: #ffff66;
+    font-size: clamp(13px, 3.6vw, 18px);
+    line-height: 1.2;
+}
+
+#star-drop-screen button {
+    width: 86%;
+    max-width: 320px;
+    min-height: 44px;
+    margin: 7px auto;
+    padding: 8px 10px;
+    font-size: clamp(14px, 4vw, 20px);
+}
+
+.drop-status {
+    margin: 6px auto 8px;
+    padding: 6px 8px;
+    width: 86%;
+    max-width: 320px;
+    border: 2px solid #ffff66;
+    background: rgba(40, 30, 0, 0.75);
+    color: #ffff66;
+    font-size: 12px;
+    font-weight: 800;
+    box-sizing: border-box;
+}
+
+.primary-action {
+    background: linear-gradient(180deg, #fde68a 0%, #facc15 45%, #b45309 100%);
+    border-color: #fff7b1;
+    color: #111827;
+    box-shadow:
+        0 0 12px rgba(250, 204, 21, 0.42),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -4px 0 rgba(120, 53, 15, 0.35);
+}
+
+.secondary-action {
+    background: #111827;
+    border-color: #94a3b8;
+    color: #e5e7eb;
+}
+
+/* ===============================
+   CSS / VISUAL STYLING - END
+   =============================== */
+</style>
+</head>
+
+<body>
+<div id="app">
+
+    <!-- ===============================
+    MAIN MENU - START
+    =============================== -->
+
+    <div id="menu-screen" class="screen">
+        <h1>STAR DROP</h1>
+        <div class="subtitle">SPEND 1 STAR  WIN FIELD GEAR</div>
+
+        <div id="menu-inventory" class="inventory-box"></div>
+
+        <button onclick="showStarDrop()">PLAY STAR DROP</button>
+        <button onclick="returnToHub()" class="secondary-action">
+		    BACK TO VETS RUSH HUB
+		</button>
+    </div>
+
+    <!-- ===============================
+    MAIN MENU - END
+    =============================== -->
+
+
+    <!-- ===============================
+    STAR DROP SCREEN - START
+    =============================== -->
+
+    <div id="star-drop-screen" class="screen hidden">
+        <h1>STAR DROP</h1>
+		<div class="subtitle">SPEND 1 STAR  WIN FIELD GEAR</div>
+		<div id="star-drop-status" class="drop-status">STARS AVAILABLE: 0</div>
+
+        <canvas id="plinko-canvas" width="390" height="520"></canvas>
+
+        <div id="toast">Ready to drop.</div>
+
+        <button class="primary-action" onclick="dropStar()">DROP 1 STAR</button>
+		<button onclick="showMenu()" class="secondary-action">
+		    BACK TO STAR DROP MENU
+		</button>
+		
+        <div id="star-drop-inventory" class="inventory-box"></div>
+    </div>
+
+    <!-- ===============================
+    STAR DROP SCREEN - END
+    =============================== -->
+
+</div>
+
+<script>
+/* ===============================
+   INVENTORY / LOCALSTORAGE - START
+   Test inventory that matches Vets Rush item names
+   =============================== */
+
+function getInventory() {
+    const saved = localStorage.getItem('vetsRushInventory');
+
+    if (saved) {
+        const inv = JSON.parse(saved);
+
+        return {
+            flags: inv.flags || 0,
+            helmets: inv.helmets || 0,
+            beds: inv.beds || 0,
+            homes: inv.homes || 0,
+            shields: inv.shields || 0,
+            stars: inv.stars || 0,
+            medals: inv.medals || 0,
+            heroCoins: inv.heroCoins || 0,
+            torpedoes: inv.torpedoes || 0
+        };
+    }
+
+    return {
+        flags: 0,
+        helmets: 0,
+        beds: 0,
+        homes: 0,
+        shields: 0,
+        stars: 0,
+        medals: 0,
+        heroCoins: 0,
+        torpedoes: 0
+    };
+}
+
+function saveInventory(inv) {
+    localStorage.setItem('vetsRushInventory', JSON.stringify(inv));
+}
+
+function updateInventoryDisplay() {
+    const inv = getInventory();
+
+    const html = `
+        <div>STARS: ${inv.stars}</div>
+        <div>HERO COINS: ${inv.heroCoins}</div>
+        <div>HELMETS: ${inv.helmets}</div>
+        <div>MEDALS: ${inv.medals}</div>
+        <div>TORPEDOES: ${inv.torpedoes}</div>
+        <div>SHIELDS: ${inv.shields}</div>
+        <div>FLAGS: ${inv.flags}</div>
+        <div>BEDS: ${inv.beds}</div>
+        <div>HOMES: ${inv.homes}</div>
+    `;
+
+    const menuInv = document.getElementById('menu-inventory');
+    const starInv = document.getElementById('star-drop-inventory');
+
+    if (menuInv) menuInv.innerHTML = html;
+    if (starInv) starInv.innerHTML = html;
+    const status = document.getElementById('star-drop-status');
+	if (status) {
+	    status.textContent = `STARS AVAILABLE: ${inv.stars || 0}`;
+	}
+}
+
+function addTestRewards() {
+    const inv = getInventory();
+
+    inv.stars = (inv.stars || 0) + 10;
+    inv.heroCoins = (inv.heroCoins || 0) + 100;
+    inv.helmets = (inv.helmets || 0) + 2;
+    inv.medals = (inv.medals || 0) + 1;
+    inv.torpedoes = (inv.torpedoes || 0) + 2;
+
+    saveInventory(inv);
+    updateInventoryDisplay();
+    showToast('Added test rewards.');
+}
+
+function resetTestInventory() {
+    localStorage.removeItem('vetsRushInventory');
+    updateInventoryDisplay();
+    showToast('Inventory reset.');
+}
+
+/* ===============================
+   INVENTORY / LOCALSTORAGE - END
+   =============================== */
+
+
+// ===============================
+// STAR DROP PRIZE TABLE - START
+// TEMP BALANCE VALUES
+// Final prize amounts should be adjusted after all Vets Rush games are complete.
+// Stars are the entry cost and should not be awarded as prizes.
+// ===============================
+
+const STAR_DROP_COST = 1;
+
+const STAR_DROP_PRIZES = [
+    {
+        label: 'TORPEDOES',
+        inventoryKey: 'torpedoes',
+        amount: 2,
+        color: '#14b8a6',
+        shortLabel: '+2 T'
+    },
+    {
+        label: 'HELMETS',
+        inventoryKey: 'helmets',
+        amount: 2,
+        color: '#3b82f6',
+        shortLabel: '+2 H'
+    },
+    {
+        label: 'HERO COINS',
+        inventoryKey: 'heroCoins',
+        amount: 150,
+        color: '#f59e0b',
+        shortLabel: '+150'
+    },
+    {
+        label: 'MEDALS',
+        inventoryKey: 'medals',
+        amount: 1,
+        color: '#dc2626',
+        shortLabel: '+1 M'
+    },
+    {
+        label: 'SHIELDS',
+        inventoryKey: 'shields',
+        amount: 1,
+        color: '#8b5cf6',
+        shortLabel: '+1 S'
+    }
+];
+
+/* ===============================
+   STAR DROP PRIZE TABLE - END
+   =============================== */
+
+
+/* ===============================
+   STAR DROP STATE - START
+   Canvas, pegs, balls, and animation state
+   =============================== */
+
+let plinkoCanvas = null;
+let plinkoCtx = null;
+let plinkoBalls = [];
+let plinkoPegs = [];
+let plinkoRunning = false;
+
+// ===============================
+// STAR DROP VISUAL FX - START
+// Board colors, glow, and winning slot flash
+// ===============================
+
+// ===============================
+// STAR DROP BACKGROUND IMAGE - START
+// Optional board background image
+// ===============================
+
+let plinkoBgImage = new Image();
+let plinkoBgReady = false;
+
+plinkoBgImage.src = 'star-drop-bg.png';
+
+plinkoBgImage.onload = function () {
+    plinkoBgReady = true;
+    drawPlinkoBoard();
+};
+
+plinkoBgImage.onerror = function () {
+    console.log('Star Drop background failed to load:', plinkoBgImage.src);
+};
+
+// ===============================
+// STAR DROP BACKGROUND IMAGE - END
+// ===============================
+
+let plinkoLastWinSlot = -1;
+let plinkoWinFlash = 0;
+
+const STAR_DROP_STYLE = {
+    bgTop: '#071224',
+    bgMid: '#0b1f3f',
+    bgBottom: '#09162d',
+    frameOuter: '#94a3b8',
+    frameInner: '#1e293b',
+    pegCore: '#cbd5e1',
+    pegGlow: 'rgba(255,255,255,0.35)',
+    rail: 'rgba(255,255,255,0.10)',
+    textMain: '#facc15',
+    textSub: '#cbd5e1'
+};
+
+// ===============================
+// STAR DROP VISUAL FX - END
+// ===============================
+
+
+// ===============================
+// STAR DROP AUDIO - START
+// Web Audio sound effects for drop, peg hit, and win
+// ===============================
+
+let starDropAudioCtx = null;
+let starDropAudioUnlocked = false;
+
+// ===============================
+// STAR DROP AUDIO - END
+// ===============================
+
+/* ===============================
+   STAR DROP STATE - END
+   =============================== */
+
+function unlockStarDropAudio() {
+    if (!starDropAudioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        starDropAudioCtx = new AudioCtx();
+    }
+
+    if (starDropAudioCtx.state === 'suspended') {
+        starDropAudioCtx.resume();
+    }
+
+    starDropAudioUnlocked = true;
+}
+
+function playStarTone(freq, duration, type = 'sine', volume = 0.03, delay = 0) {
+    if (!starDropAudioCtx || !starDropAudioUnlocked) return;
+
+    const now = starDropAudioCtx.currentTime + delay;
+
+    const osc = starDropAudioCtx.createOscillator();
+    const gain = starDropAudioCtx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(volume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(starDropAudioCtx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+}
+
+function playDropSound() {
+    playStarTone(740, 0.08, 'triangle', 0.035, 0);
+    playStarTone(520, 0.12, 'sine', 0.02, 0.02);
+}
+
+function playPegTick() {
+    playStarTone(1100 + Math.random() * 180, 0.035, 'square', 0.018, 0);
+}
+
+function playWinSound() {
+    playStarTone(523, 0.08, 'triangle', 0.03, 0);
+    playStarTone(659, 0.08, 'triangle', 0.03, 0.07);
+    playStarTone(784, 0.14, 'triangle', 0.04, 0.14);
+}
+
+// Unlock audio on first tap/click for iPhone and mobile browsers
+document.addEventListener('pointerdown', unlockStarDropAudio, { once: true });
+
+// ===============================
+// NAVIGATION HELPERS - START
+// Sends player back to the Vets Rush hub
+// ===============================
+
+function returnToHub() {
+    window.location.href = 'index.html';
+}
+
+// ===============================
+// NAVIGATION HELPERS - END
+// ===============================
+
+/* ===============================
+   STAR DROP INVISIBLE WALLS - START
+   Keeps the ball inside the board funnel
+   =============================== */
+
+function getClosestPointOnSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+
+    if (dx === 0 && dy === 0) {
+        return { x: x1, y: y1 };
+    }
+
+    const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+    const clampedT = Math.max(0, Math.min(1, t));
+
+    return {
+        x: x1 + dx * clampedT,
+        y: y1 + dy * clampedT
+    };
+}
+
+function getStarDropWalls() {
+    if (!plinkoCanvas) return [];
+
+    const w = plinkoCanvas.width;
+    const h = plinkoCanvas.height;
+
+    return [
+        // Left upper angled rail
+        {
+            x1: w * 0.33, y1: h * 0.16,
+            x2: w * 0.25, y2: h * 0.28
+        },
+
+        // Left main angled rail
+        {
+            x1: w * 0.25, y1: h * 0.28,
+            x2: w * -0.110, y2: h * 0.82
+        },
+
+        // Left lower straight rail
+        {
+            x1: w * -0.110, y1: h * 0.82,
+            x2: w * -0.110, y2: h * 0.94
+        },
+
+        // Right upper angled rail
+        {
+            x1: w * 0.67, y1: h * 0.16,
+            x2: w * 0.75, y2: h * 0.28
+        },
+
+        // Right main angled rail
+        {
+            x1: w * 0.75, y1: h * 0.28,
+            x2: w * 1.110, y2: h * 0.82
+        },
+
+        // Right lower straight rail
+        {
+            x1: w * 1.110, y1: h * 0.82,
+            x2: w * 1.110, y2: h * 0.94
+        },
+
+        // Bottom rail below prizes
+        {
+            x1: w * -0.110, y1: h * 0.94,
+            x2: w * 1.110, y2: h * 0.94
+        }
+    ];
+}
+
+function applyStarDropWallCollisions(ball) {
+    const walls = getStarDropWalls();
+    const padding = 2;
+    const minDist = ball.radius + padding;
+
+    walls.forEach(wall => {
+        const point = getClosestPointOnSegment(
+            ball.x, ball.y,
+            wall.x1, wall.y1,
+            wall.x2, wall.y2
+        );
+
+        let dx = ball.x - point.x;
+        let dy = ball.y - point.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < minDist) {
+            if (dist === 0) {
+                dx = 0;
+                dy = -1;
+                dist = 1;
+            }
+
+            const nx = dx / dist;
+            const ny = dy / dist;
+            const overlap = minDist - dist;
+
+            ball.x += nx * overlap;
+            ball.y += ny * overlap;
+
+            const dot = ball.vx * nx + ball.vy * ny;
+            if (dot < 0) {
+                const bounce = 0.78;
+                ball.vx = (ball.vx - 2 * dot * nx) * bounce;
+                ball.vy = (ball.vy - 2 * dot * ny) * bounce;
+            }
+        }
+    });
+}
+
+/* ===============================
+   STAR DROP INVISIBLE WALLS - END
+   =============================== */
+
+/* ===============================
+   STAR DROP AUDIO HELPERS - END
+   =============================== */
+
+/* ===============================
+   SCREEN FLOW - START
+   =============================== */
+
+function showMenu() {
+    document.getElementById('star-drop-screen').classList.add('hidden');
+    document.getElementById('menu-screen').classList.remove('hidden');
+    updateInventoryDisplay();
+}
+
+function showStarDrop() {
+    document.getElementById('menu-screen').classList.add('hidden');
+    document.getElementById('star-drop-screen').classList.remove('hidden');
+
+    initPlinko();
+    updateInventoryDisplay();
+    showToast('Ready to drop.');
+}
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (toast) {
+        toast.textContent = message;
+    }
+}
+
+/* ===============================
+   SCREEN FLOW - END
+   =============================== */
+
+
+/* ===============================
+   STAR DROP INIT - START
+   Builds the peg layout
+   =============================== */
+
+function initPlinko() {
+    plinkoCanvas = document.getElementById('plinko-canvas');
+    if (!plinkoCanvas) return;
+
+    plinkoCtx = plinkoCanvas.getContext('2d');
+
+    plinkoPegs = [];
+
+    const rows = 9;
+	const startY = 102;
+	const spacingX = 35;
+	const spacingY = 35;
+
+    for (let row = 0; row < rows; row++) {
+        const numPegs = row + 3;
+        const startX = (plinkoCanvas.width - (numPegs - 1) * spacingX) / 2;
+
+        for (let i = 0; i < numPegs; i++) {
+            plinkoPegs.push({
+                x: startX + i * spacingX,
+                y: startY + row * spacingY
+            });
+        }
+    }
+
+    drawPlinkoBoard();
+}
+
+/* ===============================
+   STAR DROP INIT - END
+   =============================== */
+
+
+/* ===============================
+   STAR DROP DRAWING - START
+   Board, pegs, slots, and balls
+   =============================== */
+
+function drawPlinkoBoard() {
+    if (!plinkoCtx || !plinkoCanvas) return;
+
+    const w = plinkoCanvas.width;
+    const h = plinkoCanvas.height;
+
+    const bg = plinkoCtx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, STAR_DROP_STYLE.bgTop);
+    bg.addColorStop(0.55, STAR_DROP_STYLE.bgMid);
+    bg.addColorStop(1, STAR_DROP_STYLE.bgBottom);
+
+    plinkoCtx.fillStyle = bg;
+    plinkoCtx.fillRect(0, 0, w, h);
+
+    if (plinkoBgReady) {
+	    plinkoCtx.save();
+	    plinkoCtx.globalAlpha = 0.35;
+	    plinkoCtx.drawImage(plinkoBgImage, 0, 0, w, h);
+	    plinkoCtx.restore();
+	
+	    plinkoCtx.fillStyle = 'rgba(0, 5, 15, 0.30)';
+	    plinkoCtx.fillRect(0, 0, w, h);
+	}
+
+    // rest of your board drawing continues below
+
+    // Outer board frame
+	plinkoCtx.lineWidth = 6;
+	plinkoCtx.strokeStyle = STAR_DROP_STYLE.frameOuter;
+	plinkoCtx.strokeRect(1, 1, w - 2, h - 2);
+	
+	// Inner board frame
+	plinkoCtx.lineWidth = 2;
+	plinkoCtx.strokeStyle = STAR_DROP_STYLE.frameInner;
+	plinkoCtx.strokeRect(6, 6, w - 12, h - 12);
+
+    // Header text
+    plinkoCtx.textAlign = 'center';
+    plinkoCtx.fillStyle = STAR_DROP_STYLE.textMain;
+    plinkoCtx.font = 'bold 24px monospace';
+    plinkoCtx.fillText('STAR DROP', w / 2, 36);
+
+    plinkoCtx.fillStyle = STAR_DROP_STYLE.textSub;
+    plinkoCtx.font = 'bold 12px monospace';
+    plinkoCtx.fillText('DROP ZONE', w / 2, 56);
+
+    // Drop chute
+    plinkoCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+    plinkoCtx.lineWidth = 3;
+    plinkoCtx.beginPath();
+    plinkoCtx.moveTo(w / 2 - 24, 10);
+    plinkoCtx.lineTo(w / 2 - 12, 46);
+    plinkoCtx.lineTo(w / 2 + 12, 46);
+    plinkoCtx.lineTo(w / 2 + 24, 10);
+    plinkoCtx.stroke();
+
+    // Side rails
+    plinkoCtx.strokeStyle = STAR_DROP_STYLE.rail;
+    plinkoCtx.lineWidth = 2;
+    plinkoCtx.beginPath();
+    plinkoCtx.moveTo(18, 70);
+    plinkoCtx.lineTo(18, h - 70);
+    plinkoCtx.moveTo(w - 18, 70);
+    plinkoCtx.lineTo(w - 18, h - 70);
+    plinkoCtx.stroke();
+
+    // Bottom prize rail
+    plinkoCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+    plinkoCtx.beginPath();
+    plinkoCtx.moveTo(20, h - 64);
+    plinkoCtx.lineTo(w - 20, h - 64);
+    plinkoCtx.stroke();
+
+    // Pegs
+    plinkoPegs.forEach(peg => {
+        // glow
+        plinkoCtx.fillStyle = STAR_DROP_STYLE.pegGlow;
+        plinkoCtx.beginPath();
+        plinkoCtx.arc(peg.x, peg.y, 8, 0, Math.PI * 2);
+        plinkoCtx.fill();
+
+        // core
+        plinkoCtx.fillStyle = STAR_DROP_STYLE.pegCore;
+        plinkoCtx.beginPath();
+        plinkoCtx.arc(peg.x, peg.y, 4.5, 0, Math.PI * 2);
+        plinkoCtx.fill();
+
+        // small highlight
+        plinkoCtx.fillStyle = 'rgba(255,255,255,0.75)';
+        plinkoCtx.beginPath();
+        plinkoCtx.arc(peg.x - 1.5, peg.y - 1.5, 1.2, 0, Math.PI * 2);
+        plinkoCtx.fill();
+    });
+
+    drawPrizeSlots();
+}
+
+function drawPrizeSlots() {
+    const w = plinkoCanvas.width;
+    const h = plinkoCanvas.height;
+    const slotWidth = w / STAR_DROP_PRIZES.length;
+    const baseY = h - 46;
+
+    plinkoCtx.textAlign = 'center';
+
+    STAR_DROP_PRIZES.forEach((prize, i) => {
+        const x = slotWidth * i + slotWidth / 2;
+        const isWinningSlot = (i === plinkoLastWinSlot && plinkoWinFlash > 0);
+
+        // Flash background
+        if (isWinningSlot) {
+            plinkoCtx.fillStyle = `rgba(255,255,180,${0.18 + plinkoWinFlash * 0.35})`;
+            plinkoCtx.fillRect(x - slotWidth / 2 + 2, baseY - 8, slotWidth - 4, 54);
+        }
+
+        // Slot outer
+        plinkoCtx.fillStyle = '#0f172a';
+        plinkoCtx.fillRect(x - slotWidth / 2 + 4, baseY - 2, slotWidth - 8, 40);
+
+        // Slot color
+        plinkoCtx.fillStyle = prize.color;
+        plinkoCtx.fillRect(x - slotWidth / 2 + 7, baseY + 1, slotWidth - 14, 32);
+
+        // Border
+        plinkoCtx.strokeStyle = '#ffffff';
+        plinkoCtx.lineWidth = 2;
+        plinkoCtx.strokeRect(x - slotWidth / 2 + 7, baseY + 1, slotWidth - 14, 32);
+
+        // Prize label
+        plinkoCtx.fillStyle = '#ffffff';
+        plinkoCtx.font = 'bold 13px monospace';
+        plinkoCtx.fillText(prize.shortLabel, x, baseY + 22);
+    });
+}
+
+function drawStarDropHeader() {
+    plinkoCtx.fillStyle = '#facc15';
+    plinkoCtx.font = 'bold 22px monospace';
+    plinkoCtx.textAlign = 'center';
+    plinkoCtx.fillText('STAR DROP', plinkoCanvas.width / 2, 34);
+
+    plinkoCtx.fillStyle = '#94a3b8';
+    plinkoCtx.font = 'bold 11px monospace';
+    plinkoCtx.fillText('DROP ZONE', plinkoCanvas.width / 2, 52);
+}
+
+function drawPegs() {
+    plinkoPegs.forEach(peg => {
+        plinkoCtx.fillStyle = '#64748b';
+        plinkoCtx.beginPath();
+        plinkoCtx.arc(peg.x, peg.y, 5, 0, Math.PI * 2);
+        plinkoCtx.fill();
+
+        plinkoCtx.fillStyle = '#cbd5e1';
+        plinkoCtx.beginPath();
+        plinkoCtx.arc(peg.x - 1.5, peg.y - 1.5, 1.6, 0, Math.PI * 2);
+        plinkoCtx.fill();
+    });
+}
+
+function drawPrizeSlots() {
+    const slotWidth = plinkoCanvas.width / STAR_DROP_PRIZES.length;
+    const baseY = plinkoCanvas.height - 52;
+
+    STAR_DROP_PRIZES.forEach((prize, i) => {
+        const x = slotWidth * i + slotWidth / 2;
+
+		plinkoCtx.fillStyle = '#020617';
+		plinkoCtx.fillRect(x - slotWidth / 2 + 4, baseY - 4, slotWidth - 8, 46);
+		
+		plinkoCtx.fillStyle = prize.color;
+		plinkoCtx.fillRect(x - slotWidth / 2 + 7, baseY, slotWidth - 14, 36);
+		
+		plinkoCtx.strokeStyle = '#ffffff';
+		plinkoCtx.lineWidth = 2;
+		plinkoCtx.strokeRect(x - slotWidth / 2 + 7, baseY, slotWidth - 14, 36);
+		
+		plinkoCtx.fillStyle = '#ffffff';
+		plinkoCtx.font = 'bold 11px monospace';
+		plinkoCtx.textAlign = 'center';
+		plinkoCtx.fillText(prize.shortLabel, x, baseY + 22);
+    });
+}
+
+function drawBall(ball) {
+    // Glowing outer aura
+    plinkoCtx.fillStyle = 'rgba(251,191,36,0.28)';
+    plinkoCtx.beginPath();
+    plinkoCtx.arc(ball.x, ball.y, ball.radius + 4, 0, Math.PI * 2);
+    plinkoCtx.fill();
+
+    // Main star ball
+    plinkoCtx.fillStyle = '#fbbf24';
+    plinkoCtx.beginPath();
+    plinkoCtx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    plinkoCtx.fill();
+
+    // Highlight
+    plinkoCtx.fillStyle = '#fff7b1';
+    plinkoCtx.beginPath();
+    plinkoCtx.arc(ball.x - 2, ball.y - 2, 2.5, 0, Math.PI * 2);
+    plinkoCtx.fill();
+}
+
+/* ===============================
+   STAR DROP DRAWING - END
+   =============================== */
+
+
+/* ===============================
+   STAR DROP GAMEPLAY - START
+   Spend star, drop ball, detect prize
+   =============================== */
+
+function dropStar() {
+    if (!plinkoCanvas || !plinkoCtx) {
+        initPlinko();
+    }
+
+	unlockStarDropAudio();
+	
+    if (plinkoRunning) {
+        showToast('Wait for the current drop to finish.');
+        return;
+    }
+
+	playDropSound();
+	
+    const inv = getInventory();
+
+    if ((inv.stars || 0) < STAR_DROP_COST) {
+        showToast(`Need ${STAR_DROP_COST} Star to drop.`);
+        return;
+    }
+
+    inv.stars = (inv.stars || 0) - STAR_DROP_COST;
+    saveInventory(inv);
+    updateInventoryDisplay();
+
+    const ball = {
+	    x: plinkoCanvas.width / 2 + (Math.random() - 0.5) * 40,
+	    y: 30,
+	    vx: (Math.random() - 0.5) * 1.5,
+	    vy: 2.5,
+	    radius: 5,
+	    lastPegSound: 0
+	};
+
+    plinkoBalls = [ball];
+    plinkoRunning = true;
+
+    showToast('Dropping...');
+
+    requestAnimationFrame(updatePlinko);
+}
+
+function updatePlinko() {
+    if (!plinkoCtx || !plinkoCanvas || plinkoBalls.length === 0) {
+        plinkoRunning = false;
+        return;
+    }
+
+    drawPlinkoBoard();
+
+    for (let i = plinkoBalls.length - 1; i >= 0; i--) {
+        const ball = plinkoBalls[i];
+
+        updateBallPhysics(ball);
+        drawBall(ball);
+
+        if (ball.y > plinkoCanvas.height - 58) {
+            awardPrize(ball);
+            plinkoBalls.splice(i, 1);
+        }
+    }
+
+    if (plinkoWinFlash > 0) {
+        plinkoWinFlash = Math.max(0, plinkoWinFlash - 0.06);
+    }
+
+    if (plinkoBalls.length > 0) {
+        requestAnimationFrame(updatePlinko);
+    } else {
+        plinkoRunning = false;
+    }
+}
+
+function updateBallPhysics(ball) {
+    // Move ball
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // Gravity
+    ball.vy += 0.18;
+
+    // Invisible funnel / board wall collisions
+    applyStarDropWallCollisions(ball);
+
+    // Last-resort canvas safety clamp
+    // Keeps ball from escaping if physics ever glitches
+    if (ball.x < 4 || ball.x > plinkoCanvas.width - 4) {
+        ball.vx *= -0.6;
+        ball.x = Math.max(4, Math.min(plinkoCanvas.width - 4, ball.x));
+    }
+
+    if (ball.y < 4) {
+        ball.vy *= -0.4;
+        ball.y = 4;
+    }
+
+    // Peg collisions
+    for (const peg of plinkoPegs) {
+        const dx = ball.x - peg.x;
+        const dy = ball.y - peg.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 9.5 && ball.vy > 0) {
+            const angle = Math.atan2(dy, dx);
+
+            ball.vx = Math.cos(angle) * 2.8;
+            ball.vy = -1.8;
+            ball.y = peg.y - 10;
+
+            ball.vx += (Math.random() - 0.5) * 1.2;
+
+            // Peg sound throttle
+            const nowMs = performance.now();
+            if (!ball.lastPegSound || nowMs - ball.lastPegSound > 45) {
+                playPegTick();
+                ball.lastPegSound = nowMs;
+            }
+
+            break;
+        }
+    }
+
+    // Soft speed limit so the ball does not go wild
+    const maxVx = 5.2;
+    const maxVy = 7.2;
+
+    ball.vx = Math.max(-maxVx, Math.min(maxVx, ball.vx));
+    ball.vy = Math.max(-maxVy, Math.min(maxVy, ball.vy));
+}
+
+function awardPrize(ball) {
+    const slotWidth = plinkoCanvas.width / STAR_DROP_PRIZES.length;
+    const slotIndex = Math.floor(ball.x / slotWidth);
+    const clampedIndex = Math.max(0, Math.min(STAR_DROP_PRIZES.length - 1, slotIndex));
+
+    const prize = STAR_DROP_PRIZES[clampedIndex];
+
+    plinkoLastWinSlot = clampedIndex;
+    plinkoWinFlash = 1;
+
+    const inv = getInventory();
+    inv[prize.inventoryKey] = (inv[prize.inventoryKey] || 0) + prize.amount;
+
+    saveInventory(inv);
+    updateInventoryDisplay();
+    
+    playWinSound();
+
+    showToast(`WINNER! +${prize.amount} ${prize.label} ADDED TO INVENTORY`);
+}
+
+/* ===============================
+   STAR DROP GAMEPLAY - END
+   =============================== */
+
+
+/* ===============================
+   STARTUP - START
+   =============================== */
+
+updateInventoryDisplay();
+
+/* ===============================
+   STARTUP - END
+   =============================== */
+</script>
+</body>
+</html>

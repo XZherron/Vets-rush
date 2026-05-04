@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FREEDOM WHEEL | VETS RUSH 🇺🇸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+	    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+	
+	    html,
+	    body {
+	        margin: 0;
+	        padding: 0;
+	        width: 100%;
+	        height: 100%;
+	        min-height: 100dvh;
+	        background: #020617;
+	        overflow: hidden;
+	        overscroll-behavior: none;
+	        touch-action: manipulation;
+	        font-family: 'Inter', system-ui, sans-serif;
+	    }
+		
+		* {
+		    box-sizing: border-box;
+		}
+		
+		#app {
+		    position: fixed;
+		    inset: 0;
+		    width: 100vw;
+		    height: 100dvh;
+		    min-height: 100dvh;
+		    overflow: hidden;
+		    background: radial-gradient(circle at top, #071322, #01040a 70%);
+		    display: flex;
+		    align-items: stretch;
+		    justify-content: center;
+		}
+    	
+    	#wheel-screen {
+		    width: min(100vw, 430px);
+		    height: 100dvh;
+		    max-height: 100dvh;
+		    overflow: hidden;
+		    padding: 18px 16px 24px;
+		    background: #020617;
+		    color: #f8fafc;
+		    position: relative;
+		}
+    
+        .wheel-container {
+		    width: min(86vw, 360px);
+		    height: min(86vw, 360px);
+		    max-width: 360px;
+		    max-height: 360px;
+		    margin: 18px auto 0;
+		    position: relative;
+		}
+		
+		#freedom-wheel-canvas {
+		    width: 100%;
+		    height: 100%;
+		    display: block;
+		    transition: transform 0.1s ease-out;
+		    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+		}
+        .segment-text {
+            font-size: 11px;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .result-popup {
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.6); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .wheel-action-stack {
+		    width: min(92%, 520px);
+		    margin: 18px auto 0;
+		    display: flex;
+		    flex-direction: column;
+		    gap: 10px;
+		    padding: 0 8px;
+		    box-sizing: border-box;
+		}
+		
+		.wheel-action-stack button {
+		    width: 100%;
+		    min-height: 56px;
+		    border-radius: 20px;
+		    font-size: 18px;
+		    font-weight: 800;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    gap: 12px;
+		    margin: 0;
+		    position: relative;
+		    box-sizing: border-box;
+		    border: 3px solid transparent;
+		}
+		
+		#spin-btn {
+		    background: linear-gradient(180deg, #157a76 0%, #0e5c60 100%);
+		    border-color: rgba(255,255,255,0.18);
+		    color: #eaffff;
+		    box-shadow:
+		        0 0 0 2px rgba(255,255,255,0.05) inset,
+		        0 0 18px rgba(0,255,220,0.14);
+		}
+		
+		#spin-btn:disabled {
+		    opacity: 0.65;
+		    cursor: not-allowed;
+		}
+		
+		#test-spins-btn {
+		    background: linear-gradient(180deg, #1c2440 0%, #10182f 100%);
+		    border-color: #4b5b8d;
+		    color: #ffffff;
+		    box-shadow: 0 0 14px rgba(80,120,255,0.14);
+		}
+		
+		.wheel-help-text {
+		    text-align: center;
+		    font-size: 13px;
+		    color: #94a3b8;
+		    margin-top: 2px;
+		}
+		
+		#wheel-screen {
+		    width: min(100vw, 430px);
+		    min-height: 100dvh;
+		    padding: 14px 16px 18px;
+		    color: #f8fafc;
+		    position: relative;
+		    overflow-y: auto;
+		    overflow-x: hidden;
+		
+		    background:
+		        linear-gradient(rgba(1, 8, 20, 0.55), rgba(1, 8, 20, 0.74))
+		        url('freedom-wheel-bg.png') center center / cover no-repeat;
+		}
+		
+		#wheel-screen::before {
+		    content: "";
+		    position: absolute;
+		    inset: 10px;
+		    border-radius: 22px;
+		    border: 3px solid rgba(110, 130, 180, 0.45);
+		    box-shadow:
+		        inset 0 0 0 2px rgba(255,255,255,0.04),
+		        0 0 18px rgba(40,90,180,0.18);
+		    pointer-events: none;
+		    z-index: 0;
+		}
+		
+		#wheel-screen > * {
+		    position: relative;
+		    z-index: 1;
+		}
+		
+		.wheel-header {
+		    width: 100%;
+		    display: flex;
+		    align-items: center;
+		    justify-content: space-between;
+		    margin: 4px auto 12px;
+		}
+		
+		.back-btn {
+		    background: transparent;
+		    border: 0;
+		    color: #94a3b8;
+		    font-size: 20px;
+		    display: flex;
+		    align-items: center;
+		    gap: 10px;
+		    padding: 0;
+		}
+		
+		.back-btn i {
+		    font-size: 24px;
+		}
+		
+		.spins-display {
+		    text-align: right;
+		}
+		
+		.spins-label {
+		    color: #94a3b8;
+		    font-size: 12px;
+		    letter-spacing: 1px;
+		}
+		
+		.spins-count {
+		    color: #34d399;
+		    font-family: monospace;
+		    font-weight: 900;
+		    font-size: 34px;
+		    line-height: 1;
+		}
+		
+		.wheel-title-wrap {
+		    text-align: center;
+		    margin: 4px auto 10px;
+		}
+		
+		.wheel-title-pill {
+		    display: inline-flex;
+		    align-items: center;
+		    justify-content: center;
+		    gap: 10px;
+		    background: rgba(6, 78, 59, 0.72);
+		    color: #34d399;
+		    border-radius: 999px;
+		    padding: 7px 18px;
+		    font-weight: 900;
+		    font-size: 18px;
+		    letter-spacing: 1px;
+		}
+		
+		.wheel-subtitle {
+		    color: #94a3b8;
+		    font-size: 11px;
+		    letter-spacing: 1px;
+		    margin-top: 5px;
+		}
+		
+		.wheel-stage {
+		    width: 100%;
+		    display: flex;
+		    justify-content: center;
+		    margin-top: 4px;
+		}
+		
+		.wheel-container {
+		    width: min(78vw, 300px);
+		    height: min(78vw, 300px);
+		    max-width: 300px;
+		    max-height: 300px;
+		    margin: 0 auto;
+		    position: relative;
+		}
+		
+		#freedom-wheel-canvas {
+		    width: 100%;
+		    height: 100%;
+		    display: block;
+		    border-radius: 50%;
+		    border: 10px solid #334155;
+		    cursor: pointer;
+		    transition: transform 0.1s ease-out;
+		    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+		}
+		
+		.wheel-pointer {
+		    position: absolute;
+		    top: -10px;
+		    left: 50%;
+		    transform: translateX(-50%);
+		    z-index: 20;
+		}
+		
+		.wheel-pointer-triangle {
+		    width: 0;
+		    height: 0;
+		    border-left: 18px solid transparent;
+		    border-right: 18px solid transparent;
+		    border-bottom: 32px solid #ef4444;
+		    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.55));
+		}
+		
+		.wheel-hub {
+		    position: absolute;
+		    top: 50%;
+		    left: 50%;
+		    width: 64px;
+		    height: 64px;
+		    transform: translate(-50%, -50%);
+		    background: #1e293b;
+		    border: 6px solid #facc15;
+		    border-radius: 50%;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    z-index: 10;
+		    box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+		}
+		
+		.wheel-hub-inner {
+		    width: 34px;
+		    height: 34px;
+		    background: #facc15;
+		    color: #0f172a;
+		    border-radius: 50%;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		}
+		
+		.wheel-action-stack {
+		    width: min(92%, 360px);
+		    margin: 12px auto 0;
+		    display: flex;
+		    flex-direction: column;
+		    gap: 8px;
+		    padding: 0 8px;
+		    box-sizing: border-box;
+		}
+		
+		.wheel-action-stack button {
+		    width: 100%;
+		    min-height: 54px;
+		    border-radius: 20px;
+		    font-size: 18px;
+		    font-weight: 900;
+		    display: flex;
+		    align-items: center;
+		    justify-content: center;
+		    gap: 12px;
+		    margin: 0;
+		    position: relative;
+		    box-sizing: border-box;
+		    border: 3px solid transparent;
+		}
+		
+		#spin-btn {
+		    background: linear-gradient(180deg, #157a76 0%, #0e5c60 100%);
+		    border-color: rgba(255,255,255,0.18);
+		    color: #eaffff;
+		    box-shadow:
+		        0 0 0 2px rgba(255,255,255,0.05) inset,
+		        0 0 18px rgba(0,255,220,0.14);
+		}
+		
+		#spin-btn:disabled {
+		    opacity: 0.65;
+		    cursor: not-allowed;
+		}
+		
+		.wheel-help-text {
+		    text-align: center;
+		    font-size: 12px;
+		    line-height: 1.2;
+		    color: #94a3b8;
+		    margin-top: 0;
+		}
+		
+		#result-area {
+		    width: min(92%, 360px);
+		    margin: 10px auto 0;
+		}
+		
+		.result-card {
+		    background: rgba(15, 23, 42, 0.96);
+		    border: 2px solid rgba(16, 185, 129, 0.55);
+		    border-radius: 22px;
+		    padding: 12px 14px;
+		    text-align: center;
+		    box-shadow: 0 0 18px rgba(16, 185, 129, 0.16);
+		}
+		
+		#result-icon {
+		    font-size: 38px;
+		    line-height: 1;
+		    margin-bottom: 6px;
+		}
+		
+		#result-title {
+		    font-weight: 900;
+		    font-size: 20px;
+		    line-height: 1.1;
+		    margin-bottom: 3px;
+		}
+		
+		#result-subtitle {
+		    color: #34d399;
+		    font-size: 13px;
+		    line-height: 1.2;
+		}
+		
+		.wheel-footer-text {
+		    width: min(92%, 360px);
+		    margin: 10px auto 0;
+		    color: #94a3b8;
+		    font-size: 11px;
+		    line-height: 1.25;
+		    text-align: center;
+		    padding-bottom: 8px;
+		}
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+    <div id="app">
+        <div id="wheel-screen">
+
+            <!-- Header -->
+            <div class="wheel-header">
+                <button onclick="returnToHub()" class="back-btn">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Base</span>
+                </button>
+
+                <div class="spins-display">
+                    <div class="spins-label">FREEDOM SPINS LEFT</div>
+                    <div id="spins-left" class="spins-count">3</div>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div class="wheel-title-wrap">
+                <div class="wheel-title-pill">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>FREEDOM WHEEL</span>
+                </div>
+                <div class="wheel-subtitle">SPIN FOR GLORY • SUPPORT OUR VETS</div>
+            </div>
+
+            <!-- Wheel -->
+            <div class="wheel-stage">
+                <div class="wheel-container">
+                    <!-- Pointer -->
+                    <div class="wheel-pointer">
+                        <div class="wheel-pointer-triangle"></div>
+                    </div>
+
+                    <canvas id="freedom-wheel-canvas" width="300" height="300" onclick="spinWheel()"></canvas>
+
+                    <!-- Center Hub -->
+                    <div class="wheel-hub">
+                        <div class="wheel-hub-inner">
+                            <i class="fa-solid fa-globe"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spin Button -->
+            <div class="wheel-action-stack">
+                <button onclick="spinWheel()" id="spin-btn">
+                    <i class="fa-solid fa-sync fa-spin-pulse"></i>
+                    <span id="spin-btn-text">SPIN THE WHEEL</span>
+                </button>
+
+                <div class="wheel-help-text">
+                    1 Freedom Spin per spin • Win up to 3 extra spins!
+                </div>
+            </div>
+
+            <!-- Result -->
+            <div id="result-area" class="hidden">
+                <div class="result-card result-popup">
+                    <div id="result-icon"></div>
+                    <div id="result-title"></div>
+                    <div id="result-subtitle"></div>
+                </div>
+            </div>
+
+            <!-- How to Play -->
+            <div class="wheel-footer-text">
+                Tap the wheel or button to spin • Rewards added instantly to your account
+            </div>
+
+        </div> <!-- end wheel-screen -->
+    </div> <!-- end app -->
+
+<script>
+// Shared game state (same as main app + Eagle Strike)
+// ===============================
+// INVENTORY / LOCALSTORAGE - START
+// Shared Vets Rush inventory
+// ===============================
+
+function getInventory() {
+    const saved = localStorage.getItem('vetsRushInventory');
+
+    if (saved) {
+        try {
+            const inv = JSON.parse(saved);
+
+            return {
+                flags: inv.flags || 0,
+                helmets: inv.helmets || 0,
+                beds: inv.beds || 0,
+                homes: inv.homes || 0,
+                shields: inv.shields || 0,
+                stars: inv.stars || 0,
+                medals: inv.medals || 0,
+                heroCoins: inv.heroCoins || 0,
+                torpedoes: inv.torpedoes || 0,
+                freedom: inv.freedom || 0
+            };
+        } catch (e) {}
+    }
+
+    return {
+        flags: 0,
+        helmets: 0,
+        beds: 0,
+        homes: 0,
+        shields: 0,
+        stars: 0,
+        medals: 0,
+        heroCoins: 0,
+        torpedoes: 0,
+        freedom: 0
+    };
+}
+
+function saveInventory(inv) {
+    localStorage.setItem('vetsRushInventory', JSON.stringify(inv));
+}
+
+// ===============================
+// INVENTORY / LOCALSTORAGE - END
+// ===============================
+let gameState = {
+    heroCoins: 3277350,
+    stars: 0,
+    torpedoes: 0,
+    freedom: 3,
+    valor: 0,
+    flags: 0,
+    helmets: 0,
+    medals: 0,
+    homes: 12,
+    beds: 0
+};
+
+let isSpinning = false;
+let currentRotation = 0;
+const canvas = document.getElementById('freedom-wheel-canvas');
+const ctx = canvas.getContext('2d', { alpha: true });
+
+const segments = [
+    { label: "500 🪙", type: "coins", amount: 500, color: "#eab308" },
+    { label: "2 ⭐", type: "stars", amount: 2, color: "#3b82f6" },
+    { label: "+2 🌀", type: "freedom", amount: 2, color: "#10b981" },
+    { label: "1000 🪙", type: "coins", amount: 1000, color: "#eab308" },
+    { label: "1 🧨", type: "torpedoes", amount: 1, color: "#ef4444" },
+    { label: "+3 🌀", type: "freedom", amount: 3, color: "#10b981" },
+    { label: "750 🪙", type: "coins", amount: 750, color: "#eab308" },
+    { label: "5 ⭐", type: "stars", amount: 5, color: "#3b82f6" }
+];
+
+function loadGameState() {
+    const saved = localStorage.getItem('vetsRushInventory');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            gameState = { ...gameState, ...parsed };
+        } catch (e) {}
+    }
+    updateSpinsDisplay();
+}
+
+function saveGameState() {
+    localStorage.setItem('vetsRushInventory', JSON.stringify(gameState));
+}
+
+function updateSpinsDisplay() {
+    const el = document.getElementById('spins-left');
+    if (el) el.innerText = gameState.freedom;
+    
+    const btn = document.getElementById('spin-btn');
+    if (btn) {
+        btn.disabled = gameState.freedom < 1;
+        if (gameState.freedom < 1) {
+            btn.innerHTML = `<i class="fa-solid fa-lock mr-2"></i> NO SPINS LEFT`;
+        } else {
+            btn.innerHTML = `<i class="fa-solid fa-sync fa-spin-pulse mr-2"></i> <span id="spin-btn-text">SPIN THE WHEEL</span>`;
+        }
+    }
+}
+
+function addTestSpins() {
+    gameState.freedom = (gameState.freedom || 0) + 10;
+    saveGameState();
+    updateSpinsDisplay();
+
+    const resultText = document.getElementById('result-text');
+    if (resultText) {
+        resultText.innerText = '+10 TEST SPINS ADDED';
+    }
+}
+
+// ===============================
+// NAVIGATION HELPERS - START
+// Sends player back to the Vets Rush hub
+// ===============================
+
+function returnToHub() {
+    window.location.href = 'index.html';
+}
+
+// ===============================
+// NAVIGATION HELPERS - END
+// ===============================
+
+function drawWheel() {
+    const centerX = 150;
+    const centerY = 150;
+    const radius = 130;
+    const segmentAngle = (2 * Math.PI) / segments.length;
+
+    ctx.clearRect(0, 0, 300, 300);
+
+    for (let i = 0; i < segments.length; i++) {
+        const startAngle = currentRotation + (i * segmentAngle);
+        const endAngle = startAngle + segmentAngle;
+
+        // Segment fill
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = segments[i].color;
+        ctx.fill();
+
+        // Segment border
+        ctx.strokeStyle = "#1e2937";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Label
+        const midAngle = startAngle + (segmentAngle / 2);
+        const textX = centerX + Math.cos(midAngle) * (radius * 0.65);
+        const textY = centerY + Math.sin(midAngle) * (radius * 0.65);
+
+        ctx.save();
+        ctx.translate(textX, textY);
+        ctx.rotate(midAngle + Math.PI / 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 13px Inter, system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowColor = "rgba(0,0,0,0.6)";
+        ctx.shadowBlur = 3;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+        ctx.fillText(segments[i].label, 0, 0);
+        ctx.restore();
+    }
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 38, 0, Math.PI * 2);
+    ctx.fillStyle = "#0f172a";
+    ctx.fill();
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+}
+
+function spinWheel() {
+    if (isSpinning) return;
+    if (gameState.freedom < 1) {
+        showToast("You need at least 1 Freedom Spin to play!");
+        return;
+    }
+
+    // Consume 1 spin immediately
+    gameState.freedom--;
+    saveGameState();
+    updateSpinsDisplay();
+
+    isSpinning = true;
+    const spinBtn = document.getElementById('spin-btn');
+    if (spinBtn) spinBtn.disabled = true;
+
+    // Hide previous result
+    document.getElementById('result-area').classList.add('hidden');
+
+    // Random spin: 6-10 full rotations + random landing
+    const minSpins = 6;
+    const maxSpins = 10;
+    const extraSpins = Math.random() * (maxSpins - minSpins) + minSpins;
+    const targetSegment = Math.floor(Math.random() * segments.length);
+    const segmentAngle = 360 / segments.length;
+    const targetAngle = 360 - (targetSegment * segmentAngle) - (segmentAngle / 2); // Center of segment
+
+    const totalRotation = (extraSpins * 360) + targetAngle;
+    const startTime = Date.now();
+    const duration = 4200; // 4.2 seconds
+
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing: strong ease-out
+        const eased = 1 - Math.pow(1 - progress, 4);
+        
+        currentRotation = (currentRotation + (totalRotation * eased / 10)) % 360; // Smooth continuous
+        
+        drawWheel();
+
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            // Final exact position
+            currentRotation = targetAngle % 360;
+            drawWheel();
+            
+            // Determine landed segment
+            const landedIndex = Math.floor(((360 - currentRotation) % 360) / segmentAngle);
+            const prize = segments[landedIndex];
+            
+            // Award prize
+            awardPrize(prize);
+            
+            isSpinning = false;
+            if (spinBtn) spinBtn.disabled = gameState.freedom < 1;
+            updateSpinsDisplay();
+        }
+    }
+
+    animate();
+}
+
+function awardPrize(prize) {
+    let rewardText = "";
+    let icon = "";
+
+    switch (prize.type) {
+        case "coins":
+            gameState.heroCoins += prize.amount;
+            rewardText = `+${prize.amount.toLocaleString()} HERO COINS`;
+            icon = "🪙";
+            break;
+        case "stars":
+            gameState.stars += prize.amount;
+            rewardText = `+${prize.amount} STARS`;
+            icon = "⭐";
+            break;
+        case "freedom":
+            gameState.freedom += prize.amount;
+            rewardText = `+${prize.amount} FREEDOM SPINS`;
+            icon = "🌀";
+            break;
+        case "torpedoes":
+            gameState.torpedoes += prize.amount;
+            rewardText = `+${prize.amount} TORPEDO`;
+            icon = "🧨";
+            break;
+    }
+
+    saveGameState();
+
+    // Show result
+    const resultArea = document.getElementById('result-area');
+    const iconEl = document.getElementById('result-icon');
+    const titleEl = document.getElementById('result-title');
+    const subEl = document.getElementById('result-subtitle');
+
+    iconEl.innerHTML = icon;
+    titleEl.innerHTML = rewardText;
+    subEl.innerHTML = "Added to your account instantly!";
+
+    resultArea.classList.remove('hidden');
+
+    // Confetti for big wins
+    if (prize.amount >= 3 || prize.type === "freedom") {
+        launchConfetti();
+    }
+
+    // Auto-hide result after 3.5s
+    setTimeout(() => {
+        if (!isSpinning) {
+            resultArea.classList.add('hidden');
+        }
+    }, 3500);
+}
+
+function launchConfetti() {
+    const colors = ['#10b981', '#eab308', '#3b82f6', '#ef4444'];
+    for (let i = 0; i < 45; i++) {
+        setTimeout(() => {
+            const conf = document.createElement('div');
+            conf.style.position = 'fixed';
+            conf.style.left = Math.random() * 100 + 'vw';
+            conf.style.top = '-20px';
+            conf.style.width = '10px';
+            conf.style.height = '10px';
+            conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+            conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            conf.style.zIndex = '9999';
+            conf.style.pointerEvents = 'none';
+            document.body.appendChild(conf);
+
+            const fallTime = Math.random() * 1800 + 2200;
+            conf.animate([
+                { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random()*720 + 360}deg)`, opacity: 0 }
+            ], {
+                duration: fallTime,
+                easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+            }).onfinish = () => conf.remove();
+        }, i * 12);
+    }
+}
+
+function showToast(msg) {
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-x-2 text-sm z-50';
+    toast.innerHTML = `<i class="fa-solid fa-exclamation-triangle text-yellow-400"></i> <span>${msg}</span>`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = 'all 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, 20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 2200);
+}
+
+function saveAndReturn() {
+    saveGameState();
+    window.location.href = 'index.html';
+}
+
+// Initialize
+function init() {
+    loadGameState();
+    drawWheel();
+    updateSpinsDisplay();
+
+    // Keyboard support (Space to spin)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === ' ' && !isSpinning) {
+            e.preventDefault();
+            spinWheel();
+        }
+    });
+
+    // Initial welcome toast
+    setTimeout(() => {
+        if (gameState.freedom > 0) {
+            // Optional: showToast("Ready to spin for freedom?");
+        }
+    }, 800);
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
