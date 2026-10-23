@@ -10,9 +10,9 @@ const DEFAULT_STATE = {
   heroCoins: 0,
   stars: 0,
   shields: 0,
-  valor: 100,
+  valor: 0,
   freedom: 0,
-  torpedoes: 100,
+  torpedoes: 0,
   flags: 0,
   helmets: 0,
   medals: 0,
@@ -34,10 +34,28 @@ const DEFAULT_STATE = {
   },
 
 heroReveal: {
-  currentPlane: "corsair",
-  unlockedTiles: {},
-  unlockedPlanes: []
-},
+    currentPlane: "corsair",
+    unlockedTiles: {},
+    unlockedPlanes: []
+  },
+
+  rescueRun: {
+    unlockedLevel: 1,
+    currentHero: "default",
+    unlockedHeroes: ["default"]
+  },
+  
+  spaceForce: {
+    highScore: 0,
+    bestWave: 1,
+    bestMission: 0,
+    missionsCompleted: [],
+    totalRuns: 0
+  },
+
+  tutorials: {
+    heroRevealSeen: false
+  },
 
   highScores: {},
 
@@ -66,9 +84,50 @@ function normalizeGameState(state) {
     },
 
 	heroReveal: {
-	  ...DEFAULT_STATE.heroReveal,
-	  ...((state && state.heroReveal) || {})
-	},
+      ...DEFAULT_STATE.heroReveal,
+      ...(incoming.heroReveal || {}),
+      unlockedTiles: {
+        ...DEFAULT_STATE.heroReveal.unlockedTiles,
+        ...((incoming.heroReveal && incoming.heroReveal.unlockedTiles) || {})
+      },
+      unlockedPlanes: Array.isArray(incoming.heroReveal && incoming.heroReveal.unlockedPlanes)
+        ? incoming.heroReveal.unlockedPlanes
+        : DEFAULT_STATE.heroReveal.unlockedPlanes
+    },
+
+    rescueRun: {
+      ...DEFAULT_STATE.rescueRun,
+      ...(incoming.rescueRun || {}),
+      unlockedLevel: Number(
+        (incoming.rescueRun && incoming.rescueRun.unlockedLevel) ||
+        incoming.rescueRunUnlockedLevel ||
+        DEFAULT_STATE.rescueRun.unlockedLevel
+      ) || 1,
+      currentHero:
+        (incoming.rescueRun && incoming.rescueRun.currentHero) ||
+        incoming.rescueRunCurrentHero ||
+        DEFAULT_STATE.rescueRun.currentHero,
+      unlockedHeroes: Array.isArray(incoming.rescueRun && incoming.rescueRun.unlockedHeroes)
+        ? incoming.rescueRun.unlockedHeroes
+        : DEFAULT_STATE.rescueRun.unlockedHeroes
+    },
+    
+    spaceForce: {
+      ...DEFAULT_STATE.spaceForce,
+      ...(incoming.spaceForce || {}),
+      highScore: Number((incoming.spaceForce && incoming.spaceForce.highScore) || incoming.ussfHighScore || 0) || 0,
+      bestWave: Number((incoming.spaceForce && incoming.spaceForce.bestWave) || 1) || 1,
+      bestMission: Number((incoming.spaceForce && incoming.spaceForce.bestMission) || 0) || 0,
+      totalRuns: Number((incoming.spaceForce && incoming.spaceForce.totalRuns) || 0) || 0,
+      missionsCompleted: Array.isArray(incoming.spaceForce && incoming.spaceForce.missionsCompleted)
+        ? incoming.spaceForce.missionsCompleted
+        : []
+    },
+
+    tutorials: {
+      ...DEFAULT_STATE.tutorials,
+      ...(incoming.tutorials || {})
+    },
 
     upgrades: {
       ...DEFAULT_STATE.upgrades,
@@ -168,15 +227,87 @@ function getHeroRevealState() {
   return game.heroReveal;
 }
 
-function saveHeroRevealState(heroRevealState) {
+function hasSeenTutorial(key) {
   game = window.game = normalizeGameState(window.game || game);
-  game.heroReveal = {
-    ...DEFAULT_STATE.heroReveal,
-    ...(heroRevealState || {})
-  };
+  return !!game.tutorials[key];
+}
+
+function markTutorialSeen(key) {
+  game = window.game = normalizeGameState(window.game || game);
+  game.tutorials[key] = true;
   saveGame(game);
   updateVetsRushUI();
+}
+
+function saveHeroRevealState(heroRevealState) {
+  game = window.game = normalizeGameState(window.game || game);
+
+  game.heroReveal = {
+    ...DEFAULT_STATE.heroReveal,
+    ...(heroRevealState || {}),
+    unlockedTiles: {
+      ...DEFAULT_STATE.heroReveal.unlockedTiles,
+      ...((heroRevealState && heroRevealState.unlockedTiles) || {})
+    },
+    unlockedPlanes: Array.isArray(heroRevealState && heroRevealState.unlockedPlanes)
+      ? heroRevealState.unlockedPlanes
+      : DEFAULT_STATE.heroReveal.unlockedPlanes
+  };
+
+  saveGame(game);
+  updateVetsRushUI();
+
   return game.heroReveal;
+}
+
+function getRescueRunState() {
+  game = window.game = normalizeGameState(window.game || game);
+  return game.rescueRun;
+}
+
+function saveRescueRunState(rescueRunState) {
+  game = window.game = normalizeGameState(window.game || game);
+
+  game.rescueRun = {
+    ...DEFAULT_STATE.rescueRun,
+    ...(rescueRunState || {}),
+    unlockedLevel: Number((rescueRunState && rescueRunState.unlockedLevel) || 1) || 1,
+    currentHero: (rescueRunState && rescueRunState.currentHero) || "default",
+    unlockedHeroes: Array.isArray(rescueRunState && rescueRunState.unlockedHeroes)
+      ? rescueRunState.unlockedHeroes
+      : ["default"]
+  };
+
+  saveGame(game);
+  updateVetsRushUI();
+
+  return game.rescueRun;
+}
+
+function getSpaceForceState() {
+  game = window.game = normalizeGameState(window.game || game);
+  return game.spaceForce;
+}
+
+function saveSpaceForceState(spaceForceState) {
+  game = window.game = normalizeGameState(window.game || game);
+
+  game.spaceForce = {
+    ...DEFAULT_STATE.spaceForce,
+    ...(spaceForceState || {}),
+    highScore: Number((spaceForceState && spaceForceState.highScore) || 0) || 0,
+    bestWave: Number((spaceForceState && spaceForceState.bestWave) || 1) || 1,
+    bestMission: Number((spaceForceState && spaceForceState.bestMission) || 0) || 0,
+    totalRuns: Number((spaceForceState && spaceForceState.totalRuns) || 0) || 0,
+    missionsCompleted: Array.isArray(spaceForceState && spaceForceState.missionsCompleted)
+      ? spaceForceState.missionsCompleted
+      : []
+  };
+
+  saveGame(game);
+  updateVetsRushUI();
+
+  return game.spaceForce;
 }
 
 function addReward(type, amount) {
@@ -229,11 +360,106 @@ function spend(type, amount) {
   return false;
 }
 
-function buyGameUpgrade(type, cost) {
-  if (!spend('shields', cost)) return false;
+const UPGRADE_CONFIG = {
+  extraLife: {
+    maxLevel: 5,
+    costs: {
+      shields: { base: 8, scale: 1.75 },
+      heroCoins: { base: 1500, scale: 1.8 }
+    }
+  },
+
+  shieldDuration: {
+    maxLevel: 6,
+    costs: {
+      shields: { base: 6, scale: 1.6 },
+      heroCoins: { base: 1000, scale: 1.65 }
+    }
+  },
+
+  reinforcedShield: {
+    maxLevel: 5,
+    costs: {
+      shields: { base: 10, scale: 1.7 },
+      heroCoins: { base: 1250, scale: 1.75 }
+    }
+  }
+};
+
+function getUpgradeLevel(type) {
+  game = window.game = normalizeGameState(window.game || game);
+  return Number(game.upgrades[type] || 0);
+}
+
+function getUpgradeCost(type) {
+  const config = UPGRADE_CONFIG[type];
+  if (!config) return null;
+
+  const level = getUpgradeLevel(type);
+
+  if (level >= config.maxLevel) {
+    return null;
+  }
+
+  const shieldCost = Math.ceil(config.costs.shields.base * Math.pow(config.costs.shields.scale, level));
+  const coinCost = Math.ceil(config.costs.heroCoins.base * Math.pow(config.costs.heroCoins.scale, level));
+
+  return {
+    shields: shieldCost,
+    heroCoins: coinCost
+  };
+}
+
+function canBuyUpgrade(type) {
+  const cost = getUpgradeCost(type);
+  if (!cost) return false;
 
   game = window.game = normalizeGameState(window.game || game);
-  game.upgrades[type] = (game.upgrades[type] || 0) + 1;
+
+  return (game.shields || 0) >= cost.shields &&
+         (game.heroCoins || 0) >= cost.heroCoins;
+}
+
+function buyGameUpgrade(type) {
+  const config = UPGRADE_CONFIG[type];
+  if (!config) return false;
+
+  game = window.game = normalizeGameState(window.game || game);
+
+  const currentLevel = Number(game.upgrades[type] || 0);
+
+  if (currentLevel >= config.maxLevel) {
+    return false;
+  }
+
+  const cost = getUpgradeCost(type);
+  if (!cost) return false;
+
+  if ((game.shields || 0) < cost.shields) {
+    return false;
+  }
+
+  if ((game.heroCoins || 0) < cost.heroCoins) {
+    return false;
+  }
+
+  game.shields -= cost.shields;
+  game.heroCoins -= cost.heroCoins;
+
+  game.upgrades[type] = currentLevel + 1;
+
+  // Keep legacy flat aliases synced for older pages and Eagle Strike helpers
+  if (type === 'extraLife') {
+    game.extraLives = game.upgrades.extraLife;
+  }
+
+  if (type === 'shieldDuration') {
+    game.shieldDuration = game.upgrades.shieldDuration;
+  }
+
+  if (type === 'reinforcedShield') {
+    game.reinforcedShield = game.upgrades.reinforcedShield;
+  }
 
   saveGame(game);
   updateVetsRushUI();
@@ -294,6 +520,59 @@ function addToJackpot(type, amount) {
   updateVetsRushUI();
 
   return true;
+}
+
+function stealToJackpot(type, amount) {
+  game = window.game = normalizeGameState(window.game || game);
+
+  const keyMap = {
+    coins: 'heroCoins',
+    coin: 'heroCoins',
+    heroCoin: 'heroCoins',
+    heroCoins: 'heroCoins',
+    freedomSpins: 'freedom',
+    valorChips: 'valor'
+  };
+
+  const key = keyMap[type] || type;
+  const requested = Number(amount) || 0;
+
+  if (requested <= 0) {
+    return {
+      type: key,
+      amount: 0,
+      success: false
+    };
+  }
+
+  if (typeof game[key] !== 'number') {
+    game[key] = 0;
+  }
+
+  const stolen = Math.min(game[key], requested);
+
+  if (stolen <= 0) {
+    return {
+      type: key,
+      amount: 0,
+      success: false
+    };
+  }
+
+  game[key] -= stolen;
+
+  ensureJackpot(game);
+  game.jackpot[key] = (game.jackpot[key] || 0) + stolen;
+
+  saveGame(game);
+  updateVetsRushUI();
+
+  return {
+    type: key,
+    amount: stolen,
+    success: true,
+    label: getRewardName(key)
+  };
 }
 
 function awardJackpot() {
@@ -427,6 +706,14 @@ window.VetsRush = {
   getGame,
   getInventory,
   saveInventory,
+  getHeroRevealState,
+  saveHeroRevealState,
+  getRescueRunState,
+  saveRescueRunState,
+  getSpaceForceState,
+  saveSpaceForceState,
+  hasSeenTutorial,
+  markTutorialSeen,
 
   loadGame,
   saveGame,
@@ -436,10 +723,15 @@ window.VetsRush = {
   addReward,
   spend,
   buyGameUpgrade,
+  UPGRADE_CONFIG,
+  getUpgradeLevel,
+  getUpgradeCost,
+  canBuyUpgrade,
 
   getRewardName,
   ensureJackpot,
   addToJackpot,
+  stealToJackpot,
   awardJackpot,
 
   updateUI: updateVetsRushUI,

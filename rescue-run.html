@@ -503,7 +503,6 @@
    =============================== */
     </style>
 </head>
-<body>
     <body>
 
     <!-- ===============================
@@ -671,7 +670,8 @@
     <!-- ===============================
     GAME HTML SCREENS - END
     =============================== -->
-    <script>
+    <script src="game-state.js"></script>
+	<script>
     // ===============================
 	// JAVASCRIPT GAME CODE - START
 	// ===============================
@@ -809,39 +809,51 @@
         let distanceTraveled = 0;
         let maxDistance = 2400;
         let gameTime = 0;
+        let rewardsClaimed = false;
         
         // ===============================
-		// LEVEL STATE - START
-		// Tracks current mission level and unlocked levels
-		// ===============================
-		
-		let currentLevel = 1;
-		let unlockedLevel = Number(localStorage.getItem('rescueRunUnlockedLevel')) || 1;
-		
-		// ===============================
-		// LEVEL STATE - END
-		// ===============================
+        // LEVEL STATE - START
+        // Tracks current mission level and unlocked levels
+        // ===============================
+        
+        let currentLevel = 1;
+        let rescueRunState = window.VetsRush.getRescueRunState();
+        let unlockedLevel = Number(rescueRunState.unlockedLevel || 1);
         
         // ===============================
-		// HERO STATE - START
-		// Tracks selected heroes and permanent hero unlocks
-		// ===============================
-		
-		let currentHero = localStorage.getItem('rescueRunCurrentHero') || 'default';
-		
-		let unlockedHeroes = JSON.parse(
-		    localStorage.getItem('rescueRunUnlockedHeroes') || '["default"]'
-		);
-		
-		const HERO_UNLOCK_COSTS = {
-		    doubleTap: {
-		        helmets: 10
-		    }
-		};
-		
-		// ===============================
-		// HERO STATE - END
-		// ===============================
+        // LEVEL STATE - END
+        // ===============================
+        
+        // ===============================
+        // HERO STATE - START
+        // Tracks selected heroes and permanent hero unlocks
+        // ===============================
+        
+        let currentHero = rescueRunState.currentHero || 'default';
+        
+        let unlockedHeroes = Array.isArray(rescueRunState.unlockedHeroes)
+            ? rescueRunState.unlockedHeroes
+            : ['default'];
+        
+        const HERO_UNLOCK_COSTS = {
+            doubleTap: {
+                helmets: 10
+            }
+        };
+        
+        function saveRescueProgress() {
+            rescueRunState = {
+                unlockedLevel,
+                currentHero,
+                unlockedHeroes
+            };
+        
+            window.VetsRush.saveRescueRunState(rescueRunState);
+        }
+        
+        // ===============================
+        // HERO STATE - END
+        // ===============================
         
         // ===============================
 		// EAGLE STRIKE STATE - START
@@ -1152,28 +1164,16 @@
 		// ===============================
         
         // ===============================
-		// INVENTORY / LOCALSTORAGE - START
-		// Saves and loads Vets Rush rewards and inventory
-		// ===============================
-        // LocalStorage Inventory
+        // INVENTORY / GAME STATE - START
+        // Uses game-state.js as the single source of truth
+        // ===============================
+        
         function getInventory() {
-            const saved = localStorage.getItem('vetsRushInventory');
-            if (saved) return JSON.parse(saved);
-            return {
-			    flags: 0,
-			    helmets: 0,
-			    beds: 0,
-			    homes: 0,
-			    shields: 0,
-			    stars: 0,
-			    medals: 0,
-			    heroCoins: 0,
-			    torpedoes: 0
-			};
+            return window.VetsRush.getInventory();
         }
         
         function saveInventory(inv) {
-            localStorage.setItem('vetsRushInventory', JSON.stringify(inv));
+            return window.VetsRush.saveInventory(inv);
         }
         
         function updateInventoryDisplay() {
@@ -1211,7 +1211,7 @@
 		}
         
         // ===============================
-		// INVENTORY / LOCALSTORAGE - END
+		// INVENTORY / GAME STATE - END
 		// ===============================
         
         // ===============================
@@ -3980,6 +3980,7 @@
 		
 		    // Full mission reset
 		    resetMissionState();
+		    rewardsClaimed = false;
 		
 		    // Force clean play state
 		    gameState = 'playing';
@@ -4092,7 +4093,7 @@
 		        Math.max(unlockedLevel, nextLevel)
 		    );
 		
-		    localStorage.setItem('rescueRunUnlockedLevel', unlockedLevel);
+		    saveRescueProgress();
 		
 		    return {
 		        unlocked: true,
@@ -4172,6 +4173,8 @@
 		// ===============================
         
         function claimRewards() {
+            if (rewardsClaimed) return;
+            rewardsClaimed = true;
 		    const inv = getInventory();
 		
 		    const earnedFlags = getFlagReward();
@@ -4233,22 +4236,21 @@
 		}
         
         // ===============================
-		// HERO HELPERS - START
-		// Saves hero progress and checks unlock status
-		// ===============================
-		
-		function saveHeroProgress() {
-		    localStorage.setItem('rescueRunCurrentHero', currentHero);
-		    localStorage.setItem('rescueRunUnlockedHeroes', JSON.stringify(unlockedHeroes));
-		}
-		
-		function isHeroUnlocked(heroId) {
-		    return unlockedHeroes.includes(heroId);
-		}
-		
-		// ===============================
-		// HERO HELPERS - END
-		// ===============================
+        // HERO HELPERS - START
+        // Saves hero progress and checks unlock status
+        // ===============================
+        
+        function saveHeroProgress() {
+            saveRescueProgress();
+        }
+        
+        function isHeroUnlocked(heroId) {
+            return unlockedHeroes.includes(heroId);
+        }
+        
+        // ===============================
+        // HERO HELPERS - END
+        // ===============================
         
         function isIOSDevice() {
 		    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||

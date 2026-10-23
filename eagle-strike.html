@@ -6,7 +6,6 @@
     <title>EAGLE STRIKE  | VETS RUSH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="game-state.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=Press+Start+2P&amp;display=swap');
         
@@ -78,7 +77,7 @@
             </div>
             <div class="text-right">
                 <div class="text-xs text-slate-400">HIGH SCORE</div>
-                <div id="highScore" class="font-mono font-bold text-lg text-amber-400">12,450</div>
+                <div id="highScore" class="font-mono font-bold text-lg text-amber-400">0</div>
             </div>
         </div>
 
@@ -116,11 +115,17 @@
                         <div class="flex justify-center items-center gap-4 text-slate-900">
                             <div>
                                 <div class="text-2xl font-bold">+<span id="rewardCoins">1,850</span></div>
-                                <div class="text-xs">Hero Coins </div>
+                                <div class="text-xs">Hero Coins &#x1FA99;</div>
                             </div>
+                        
                             <div>
                                 <div class="text-2xl font-bold">+<span id="rewardStars">4</span></div>
-                                <div class="text-xs">Shields </div>
+                                <div class="text-xs">Shields &#x1F6E1;&#xFE0F;</div>
+                            </div>
+                        
+                            <div>
+                                <div class="text-2xl font-bold">+<span id="rewardValor">0</span></div>
+                                <div class="text-xs">Valor &#x1F0CF;</div>
                             </div>
                         </div>
                     </div>
@@ -130,7 +135,7 @@
                         <i class="fas fa-gift mr-2"></i> CLAIM REWARDS
                     </button>
                     
-                    <button onclick="returnToVetsRush()" 
+                    <button onclick="returnToBase()"
 					        class="w-full mt-3 bg-slate-700 hover:bg-slate-600 text-white font-bold py-4 rounded-2xl text-lg flex items-center justify-center gap-2 transition-colors">
 					    <i class="fas fa-home mr-2"></i> RETURN TO HUB
 					</button>
@@ -141,14 +146,20 @@
         <!-- Controls -->
         <div class="bg-slate-900 p-4">
             <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <div class="px-3 py-1 bg-slate-800 rounded-full text-sm flex items-center gap-2">
                         <i class="fas fa-heart text-red-500"></i>
                         <span id="lives">3</span>
                     </div>
+                
                     <div class="px-3 py-1 bg-slate-800 rounded-full text-sm flex items-center gap-2">
                         <i class="fas fa-medal text-amber-400"></i>
                         <span id="medals">0</span>
+                    </div>
+                
+                    <div class="px-3 py-1 bg-slate-800 rounded-full text-xs flex items-center gap-2">
+                        <i class="fas fa-shield-alt text-sky-400"></i>
+                        <span id="shieldStatus">OFF</span>
                     </div>
                 </div>
                 <div class="text-right">
@@ -177,16 +188,46 @@
         </div>
     </div>
 
+	<script src="game-state.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        function calculateValorReward(score) {
+            const finalScore = Number(score) || 0;
+        
+            // 1 Valor per 2,500 score, capped at 5 per run
+            return Math.min(5, Math.floor(finalScore / 2500));
+        }
+        
+        function getEagleHighScore() {
+            const inv = window.VetsRush.getInventory();
+        
+            if (!inv.highScores) {
+                inv.highScores = {};
+            }
+        
+            return Number(inv.highScores.eagleStrike || 0);
+        }
+        
+        function saveEagleHighScore(value) {
+            const inv = window.VetsRush.getInventory();
+        
+            if (!inv.highScores) {
+                inv.highScores = {};
+            }
+        
+            inv.highScores.eagleStrike = Number(value) || 0;
+            window.VetsRush.saveInventory(inv);
+        }
         
         let gameState = 'menu';
         let score = 0;
         let distance = 0;
         let medals = 0;
         let lives = 3;
-        let highScore = localStorage.getItem('eagleHighScore') || 12450;
+        let gameEnded = false;
+        let highScore = getEagleHighScore();
         
         document.getElementById('highScore').textContent = highScore.toLocaleString();
         
@@ -197,6 +238,7 @@
             rotation: 0,
             hasShield: false,
             shieldTime: 0,
+            shieldHitsLeft: 1,
             hasDoubleFire: false,
             doubleFireTime: 0
         };
@@ -212,30 +254,82 @@
         let climbPressed = false;
         let lastShot = 0;
         
+        function getEagleUpgrades() {
+            const inv = window.VetsRush.getInventory();
+        
+            return {
+                extraLife: Number(inv.upgrades?.extraLife || inv.extraLives || 0),
+                shieldDuration: Number(inv.upgrades?.shieldDuration || inv.shieldDuration || 0),
+                reinforcedShield: Number(inv.upgrades?.reinforcedShield || inv.reinforcedShield || 0)
+            };
+        }
+        
+        function activateShield(baseDurationMs) {
+            const upgrades = getEagleUpgrades();
+        
+            player.hasShield = true;
+            player.shieldTime = Date.now() + baseDurationMs + (upgrades.shieldDuration * 1000);
+            player.shieldHitsLeft = 1 + upgrades.reinforcedShield;
+        
+            updateShieldDisplay();
+        }
+        
+        function updateShieldDisplay() {
+            const el = document.getElementById('shieldStatus');
+            if (!el) return;
+        
+            if (!player.hasShield) {
+                el.textContent = 'OFF';
+                return;
+            }
+        
+            const secondsLeft = Math.max(0, Math.ceil((player.shieldTime - Date.now()) / 1000));
+            el.textContent = `${player.shieldHitsLeft || 1} HIT${player.shieldHitsLeft === 1 ? '' : 'S'} / ${secondsLeft}s`;
+        }
+        
+        function absorbShieldHit() {
+            if (!player.hasShield) return false;
+        
+            player.shieldHitsLeft = Math.max(0, (player.shieldHitsLeft || 1) - 1);
+        
+            if (player.shieldHitsLeft <= 0) {
+                player.hasShield = false;
+                player.shieldTime = 0;
+            }
+        
+            updateShieldDisplay();
+            return true;
+        }
+        
         function prepareGame() {
+            const upgrades = getEagleUpgrades();
+        
             player.x = 120;
             player.y = 260;
             player.vy = 0;
             player.rotation = 0;
-            player.hasShield = true;
-            player.shieldTime = Date.now() + 4500;
             player.hasDoubleFire = false;
-            
+        
+            activateShield(4500);
+        
             enemies = [];
             missiles = [];
             playerMissiles = [];
             powerups = [];
             particles = [];
-            
+        
             score = 0;
             distance = 0;
             medals = 0;
-            lives = 3;
-            
+            lives = 3 + upgrades.extraLife;
+            gameEnded = false;
+        
             document.getElementById('score').textContent = score;
             document.getElementById('medals').textContent = medals;
             document.getElementById('lives').textContent = lives;
-            
+        
+            updateShieldDisplay();
+        
             lastShot = Date.now();
         }
         
@@ -313,7 +407,10 @@
             
             if (player.hasShield && Date.now() > player.shieldTime) {
                 player.hasShield = false;
+                player.shieldHitsLeft = 0;
             }
+            
+            updateShieldDisplay();
             
             if (player.hasDoubleFire && Date.now() > player.doubleFireTime) {
                 player.hasDoubleFire = false;
@@ -354,7 +451,7 @@
                 
                 const dist = Math.sqrt((player.x - e.x)**2 + (player.y - e.y)**2);
                 if (dist < 32) {
-                    if (player.hasShield) {
+                    if (absorbShieldHit()) {
                         createExplosion(e.x, e.y, '#60a5fa');
                         enemies.splice(i, 1);
                         score += 60;
@@ -363,7 +460,10 @@
                         lives--;
                         document.getElementById('lives').textContent = lives;
                         if (lives <= 0) { endGame(); return; }
-                        else { player.hasShield = true; player.shieldTime = Date.now() + 2000; enemies.splice(i, 1); }
+                        else {
+                            activateShield(2000);
+                            enemies.splice(i, 1);
+                        }
                     }
                 }
                 if (e.x < -30) enemies.splice(i, 1);
@@ -378,7 +478,7 @@
                 
                 const dist = Math.sqrt((player.x - m.x)**2 + (player.y - m.y)**2);
                 if (dist < 18) {
-                    if (player.hasShield) {
+                    if (absorbShieldHit()) {
                         createExplosion(m.x, m.y, '#60a5fa');
                         missiles.splice(i, 1);
                     } else {
@@ -386,7 +486,10 @@
                         lives--;
                         document.getElementById('lives').textContent = lives;
                         if (lives <= 0) { endGame(); return; }
-                        else { player.hasShield = true; player.shieldTime = Date.now() + 1800; missiles.splice(i, 1); }
+                        else {
+                            activateShield(1800);
+                            missiles.splice(i, 1);
+                        }
                     }
                 }
                 if (m.x < -20) missiles.splice(i, 1);
@@ -398,8 +501,7 @@
                 const dist = Math.sqrt((player.x - p.x)**2 + (player.y - p.y)**2);
                 if (dist < 28) {
                     if (p.type === 'shield') {
-                        player.hasShield = true;
-                        player.shieldTime = Date.now() + 5500;
+                        activateShield(5500);
                         createExplosion(p.x, p.y, '#60a5fa');
                     } else {
                         player.hasDoubleFire = true;
@@ -430,7 +532,10 @@
                 lives--;
                 document.getElementById('lives').textContent = lives;
                 if (lives <= 0) { endGame(); return; }
-                else { player.hasShield = true; player.shieldTime = Date.now() + 2000; player.y = Math.max(35, Math.min(485, player.y)); }
+                else {
+                    activateShield(2000);
+                    player.y = Math.max(35, Math.min(485, player.y));
+                }
             }
         }
         
@@ -721,93 +826,101 @@
         }
         
         function endGame() {
+            if (gameEnded) return;
+            gameEnded = true;
+        
             gameState = 'gameover';
-            
+        
             const finalDistanceEl = document.getElementById('finalDistance');
             const finalMedalsEl = document.getElementById('finalMedals');
             const finalKillsEl = document.getElementById('finalKills');
             const rewardCoinsEl = document.getElementById('rewardCoins');
             const rewardStarsEl = document.getElementById('rewardStars');
-            
+            const rewardValorEl = document.getElementById('rewardValor');
+        
             finalDistanceEl.textContent = Math.floor(distance) + 'm';
             finalMedalsEl.textContent = medals;
             finalKillsEl.textContent = Math.floor(score / 85);
-            
+        
             const shieldsEarned = Math.max(1, Math.floor(score / 750) + medals);
             const coinsEarned = Math.floor(score * 0.15);
-            
+            const valorEarned = calculateValorReward(score);
+        
             rewardCoinsEl.textContent = coinsEarned;
             rewardStarsEl.textContent = shieldsEarned;
-            
+        
+            if (rewardValorEl) {
+                rewardValorEl.textContent = valorEarned;
+            }
+        
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('eagleHighScore', highScore);
+                saveEagleHighScore(highScore);
                 document.getElementById('highScore').textContent = highScore.toLocaleString();
             }
-            
+        
             document.getElementById('gameOverScreen').classList.remove('hidden');
-            window.pendingRewards = { coins: coinsEarned, shields: shieldsEarned };
+        
+            window.pendingRewards = {
+                coins: coinsEarned,
+                shields: shieldsEarned,
+                valor: valorEarned
+            };
+        }
+        
+        function awardPendingRewards() {
+            if (!window.pendingRewards) {
+                return { coins: 0, shields: 0, awarded: false };
+            }
+        
+            const coins = window.pendingRewards.coins || 0;
+            const shields = window.pendingRewards.shields || 0;
+            const valor = window.pendingRewards.valor || 0;
+        
+            if (window.VetsRush && typeof window.VetsRush.addReward === 'function') {
+                if (coins > 0) window.VetsRush.addReward('heroCoins', coins);
+                if (shields > 0) window.VetsRush.addReward('shields', shields);
+                if (valor > 0) window.VetsRush.addReward('valor', valor);
+            } else {
+                alert("Error: Shared save system not ready. Please refresh the page and try again.");
+                return { coins: 0, shields: 0, valor: 0, awarded: false };
+            }
+        
+            window.pendingRewards = null;
+        
+            return { coins, shields, valor, awarded: true };
         }
         
         function claimRewards() {
-            if (!window.pendingRewards) return;
-
-            const coins = window.pendingRewards.coins || 0;
-            const shields = window.pendingRewards.shields || 0;
-
-            // ONLY uses the official shared system — never overwrites anything else
-            if (window.VetsRush && window.VetsRush.addReward) {
-                if (coins > 0) window.VetsRush.addReward('heroCoins', coins);
-                if (shields > 0) window.VetsRush.addReward('shields', shields);
-            } else {
-                alert("Error: Shared save system not ready. Please refresh the page and try again.");
-                return;
-            }
-
-            window.pendingRewards = null;
-
+            const result = awardPendingRewards();
+        
+            if (!result.awarded) return;
+        
+            const coins = result.coins || 0;
+            const shields = result.shields || 0;
+            const valor = result.valor || 0;
+        
             const btns = document.querySelectorAll('#gameOverScreen button');
             btns.forEach(b => b.style.display = 'none');
-
+        
             const msg = document.createElement('div');
             msg.className = 'text-center py-4';
             msg.innerHTML = `
-                <div class="text-emerald-400 text-4xl mb-2"></div>
+                <div class="text-emerald-400 text-4xl mb-2">✅</div>
                 <div class="font-bold text-xl">Rewards Claimed!</div>
                 <div class="text-sm text-slate-400 mt-1">+${coins.toLocaleString()} Hero Coins</div>
                 <div class="text-sm text-emerald-400 mt-1">+${shields} Shields</div>
+                <div class="text-sm text-amber-400 mt-1">+${valor} Valor Chips</div>
             `;
-
+        
             document.querySelector('#gameOverScreen .text-center').appendChild(msg);
-
+        
             setTimeout(() => {
                 msg.remove();
                 btns.forEach(b => b.style.display = 'flex');
                 document.getElementById('gameOverScreen').classList.add('hidden');
                 showStartScreen();
             }, 2200);
-        }
-        
-        function returnToVetsRush() {
-            let coins = 0;
-            let shields = 0;
-
-            if (window.pendingRewards) {
-                coins = window.pendingRewards.coins || 0;
-                shields = window.pendingRewards.shields || 0;
-            } else if (score > 0) {
-                coins = Math.floor(score * 0.15);
-                shields = Math.max(1, Math.floor(score / 750) + medals);
-            }
-
-            if (coins > 0 || shields > 0) {
-                if (window.VetsRush && window.VetsRush.addReward) {
-                    if (coins > 0) window.VetsRush.addReward('heroCoins', coins);
-                    if (shields > 0) window.VetsRush.addReward('shields', shields);
-                }
-            }
-
-            window.location.href = 'index.html';
         }
         
         function restartGame() {
@@ -860,26 +973,14 @@
         }
         
         function returnToBase() {
-		    let coins = 0;
-		    let shields = 0;
-		
-		    if (window.pendingRewards) {
-		        coins = window.pendingRewards.coins || 0;
-		        shields = window.pendingRewards.shields || 0;
-		    } else if (score > 0) {
-		        coins = Math.floor(score * 0.15);
-		        shields = Math.max(1, Math.floor(score / 750) + medals);
-		    }
-		
-		    if (coins > 0 || shields > 0) {
-		        if (window.VetsRush && window.VetsRush.addReward) {
-		            if (coins > 0) window.VetsRush.addReward('heroCoins', coins);
-		            if (shields > 0) window.VetsRush.addReward('shields', shields);
-		        }
-		    }
-		
-		    window.location.href = 'index.html';
-		}
+            awardPendingRewards();
+        
+            if (window.VetsRush && typeof window.VetsRush.saveGame === 'function') {
+                window.VetsRush.saveGame();
+            }
+        
+            window.location.href = 'index.html';
+        }
         
         function initGame() {
             showStartScreen();

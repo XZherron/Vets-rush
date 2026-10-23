@@ -282,46 +282,19 @@ button:active {
 
 </div>
 
+<script src="game-state.js"></script>
 <script>
 /* ===============================
-   INVENTORY / LOCALSTORAGE - START
-   Test inventory that matches Vets Rush item names
+   INVENTORY / GAME STATE - START
+   Uses game-state.js as the single source of truth
    =============================== */
 
 function getInventory() {
-    const saved = localStorage.getItem('vetsRushInventory');
-
-    if (saved) {
-        const inv = JSON.parse(saved);
-
-        return {
-            flags: inv.flags || 0,
-            helmets: inv.helmets || 0,
-            beds: inv.beds || 0,
-            homes: inv.homes || 0,
-            shields: inv.shields || 0,
-            stars: inv.stars || 0,
-            medals: inv.medals || 0,
-            heroCoins: inv.heroCoins || 0,
-            torpedoes: inv.torpedoes || 0
-        };
-    }
-
-    return {
-        flags: 0,
-        helmets: 0,
-        beds: 0,
-        homes: 0,
-        shields: 0,
-        stars: 0,
-        medals: 0,
-        heroCoins: 0,
-        torpedoes: 0
-    };
+    return window.VetsRush.getInventory();
 }
 
 function saveInventory(inv) {
-    localStorage.setItem('vetsRushInventory', JSON.stringify(inv));
+    return window.VetsRush.saveInventory(inv);
 }
 
 function updateInventoryDisplay() {
@@ -344,34 +317,19 @@ function updateInventoryDisplay() {
 
     if (menuInv) menuInv.innerHTML = html;
     if (starInv) starInv.innerHTML = html;
+
     const status = document.getElementById('star-drop-status');
-	if (status) {
-	    status.textContent = `STARS AVAILABLE: ${inv.stars || 0}`;
-	}
-}
+    if (status) {
+        status.textContent = `STARS AVAILABLE: ${inv.stars || 0}`;
+    }
 
-function addTestRewards() {
-    const inv = getInventory();
-
-    inv.stars = (inv.stars || 0) + 10;
-    inv.heroCoins = (inv.heroCoins || 0) + 100;
-    inv.helmets = (inv.helmets || 0) + 2;
-    inv.medals = (inv.medals || 0) + 1;
-    inv.torpedoes = (inv.torpedoes || 0) + 2;
-
-    saveInventory(inv);
-    updateInventoryDisplay();
-    showToast('Added test rewards.');
-}
-
-function resetTestInventory() {
-    localStorage.removeItem('vetsRushInventory');
-    updateInventoryDisplay();
-    showToast('Inventory reset.');
+    if (window.VetsRush && typeof window.VetsRush.updateUI === 'function') {
+        window.VetsRush.updateUI();
+    }
 }
 
 /* ===============================
-   INVENTORY / LOCALSTORAGE - END
+   INVENTORY / GAME STATE - END
    =============================== */
 
 

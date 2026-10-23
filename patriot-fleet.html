@@ -6,7 +6,6 @@
     <title>PATRIOT FLEET • VETS RUSH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="game-state.js"></script>
     <style>
         body { font-family: 'Inter', system_ui, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e2937 100%); color: white; }
         .fleet-cell {
@@ -93,11 +92,12 @@
         </div>
     </div>
 
+	<script src="game-state.js"></script>
     <script>
         let fleetLevel = 1;
         let fleetSubs = [];
         let fleetHits = 0;
-        let fleetShotsLeft = 9999;   // INFINITE TORPEDOES FOR TESTING
+        let fleetShotsLeft = 0;
         
         function getGridSize() {
 		    if (fleetLevel <= 5) return 6;
@@ -111,7 +111,8 @@
 		}
 
         function initPatriotFleet() {
-		    fleetShotsLeft = 9999;
+		    const inv = window.VetsRush.getInventory();
+            fleetShotsLeft = inv.torpedoes || 0;
 		    fleetHits = 0;
 		
 		    const size = getGridSize();
@@ -227,29 +228,19 @@
 		    }
 		}
 
-        function getAdjacentCells(pos) {
-            const row = Math.floor(pos / 6);
-            const col = pos % 6;
-            const neighbors = [];
-            for (let dr = -1; dr <= 1; dr++) {
-                for (let dc = -1; dc <= 1; dc++) {
-                    if (dr === 0 && dc === 0) continue;
-                    const r = row + dr, c = col + dc;
-                    if (r >= 0 && r < 6 && c >= 0 && c < 6) neighbors.push(r * 6 + c);
-                }
-            }
-            return neighbors;
-        }
-
         function fireTorpedo(index, cell) {
-		    if (fleetShotsLeft <= 0) return;
-		
-		    fleetShotsLeft--;
-		    document.getElementById('fleet-shots').innerText = fleetShotsLeft;
-		
-		    if (window.VetsRush && typeof window.VetsRush.spend === 'function') {
-		        window.VetsRush.spend('torpedoes', 1);
-		    }
+            if (cell.dataset.fired === "true") return;
+        
+            if (!window.VetsRush.spend('torpedoes', 1)) {
+                alert("You need at least 1 Torpedo to fire.");
+                return;
+            }
+        
+            cell.dataset.fired = "true";
+        
+            const inv = window.VetsRush.getInventory();
+            fleetShotsLeft = inv.torpedoes || 0;
+            document.getElementById('fleet-shots').innerText = fleetShotsLeft;
 		
 		    let hit = false;
 		    for (let sub of fleetSubs) {
@@ -292,9 +283,13 @@
 		}
 
         function completeLevel() {
-		    const reward = 8500 + (fleetLevel * 2500) + (fleetShotsLeft * 300);
+		    const reward = 8500 + (fleetLevel * 2500);
 		    const stars = Math.floor(fleetLevel / 2) + 1;
 		    const torpedoes = Math.floor(fleetLevel / 3) + 1;
+		
+		    window.VetsRush.addReward('heroCoins', reward);
+            window.VetsRush.addReward('stars', stars);
+            window.VetsRush.addReward('torpedoes', torpedoes);
 		
 		    const completeScreen = document.getElementById('fleet-complete');
 		    const rewardText = document.getElementById('fleet-reward-text');
@@ -310,7 +305,8 @@
         function startNextLevel() {
 		    fleetLevel++;
 		    fleetHits = 0;
-		    fleetShotsLeft = 9999;   //  ADD THIS LINE
+		    const inv = window.VetsRush.getInventory();
+            fleetShotsLeft = inv.torpedoes || 0;
 		    document.getElementById('fleet-level').innerText = fleetLevel;
 		    document.getElementById('fleet-complete').classList.add('hidden');
 		    initPatriotFleet();

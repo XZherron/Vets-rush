@@ -231,6 +231,22 @@
 
     <script src="game-state.js"></script>
     <script>
+    	// ===============================
+        // SHARED INVENTORY BRIDGE - START
+        // Uses game-state.js as the single source of truth
+        // ===============================
+        
+        function getInventory() {
+            return window.VetsRush.getInventory();
+        }
+        
+        function saveInventory(inv) {
+            return window.VetsRush.saveInventory(inv);
+        }
+        
+        // ===============================
+        // SHARED INVENTORY BRIDGE - END
+        // ===============================
         // ===== TAILWIND CONFIG =====
         function initTailwind() {
             document.documentElement.style.setProperty('--accent', '#10b981');
@@ -304,26 +320,43 @@
         ];
         
         // ===== HERO REVEAL STATE =====
-        let heroRevealState = JSON.parse(localStorage.getItem('heroRevealState')) || {
-            currentPlane: "corsair",
-            unlockedTiles: {},
-            unlockedPlanes: []
-        };
-        
-        // Ensure arrays exist
+        let heroRevealState = window.VetsRush.getHeroRevealState();
+
+        if (!heroRevealState.currentPlane) heroRevealState.currentPlane = "corsair";
         if (!heroRevealState.unlockedTiles) heroRevealState.unlockedTiles = {};
         if (!heroRevealState.unlockedPlanes) heroRevealState.unlockedPlanes = [];
         
         function saveHeroReveal() {
-            localStorage.setItem('heroRevealState', JSON.stringify(heroRevealState));
+            window.VetsRush.saveHeroRevealState(heroRevealState);
         }
         
-        // ===== GAME STATE HELPERS (ADAPTED TO VETS RUSH) =====
+        // ===== GAME STATE HELPERS (USES game-state.js) =====
         function getGameState() {
-            if (window.VetsRush && window.VetsRush.game) {
-                return window.VetsRush.game;
-            }
-            return window.game || {};
+            return getInventory();
+        }
+        
+        function canAfford(cost) {
+            const inv = getInventory();
+        
+            return Object.keys(cost).every(resource => {
+                const current = inv[resource] || 0;
+                return current >= (cost[resource] || 0);
+            });
+        }
+        
+        function spendCost(cost) {
+            const inv = getInventory();
+        
+            Object.keys(cost).forEach(resource => {
+                inv[resource] = (inv[resource] || 0) - (cost[resource] || 0);
+        
+                if (inv[resource] < 0) {
+                    inv[resource] = 0;
+                }
+            });
+        
+            saveInventory(inv);
+            updateResourceBar();
         }
         
         function canAfford(cost) {
@@ -341,13 +374,6 @@
                     gs[resource] -= (cost[resource] || 0);
                 }
             });
-            
-            // Save via VetsRush if available
-            if (window.VetsRush && window.VetsRush.saveGame) {
-                window.VetsRush.saveGame(gs);
-            } else if (window.saveGameState) {
-                window.saveGameState();
-            }
             
             updateResourceBar();
         }
@@ -471,29 +497,18 @@
         
         // ===== CHECK PLANE COMPLETE =====
         function checkPlaneComplete(planeId) {
-            const totalTiles = getPlaneTileCount(planeId);
-            const unlocked = heroRevealState.unlockedTiles[planeId]?.length || 0;
-            
-            if (unlocked >= totalTiles) {
-                if (!heroRevealState.unlockedPlanes.includes(planeId)) {
-                    heroRevealState.unlockedPlanes.push(planeId);
-                    
-                    // Also update main game state
-                    const gs = getGameState();
-                    if (!gs.unlockedPlanes) gs.unlockedPlanes = [];
-                    if (!gs.unlockedPlanes.includes(planeId)) {
-                        gs.unlockedPlanes.push(planeId);
-                    }
-                    
-                    if (window.VetsRush && window.VetsRush.saveGame) {
-                        window.VetsRush.saveGame(gs);
-                    }
-                    
-                    // Celebration
-                    showPlaneComplete(planeId);
-                }
-            }
-        }
+		    const totalTiles = getPlaneTileCount(planeId);
+		    const unlocked = heroRevealState.unlockedTiles[planeId]?.length || 0;
+		
+		    if (unlocked >= totalTiles) {
+		        if (!heroRevealState.unlockedPlanes.includes(planeId)) {
+		            heroRevealState.unlockedPlanes.push(planeId);
+		            saveHeroReveal();
+		
+		            showPlaneComplete(planeId);
+		        }
+		    }
+		}
         
         function showPlaneComplete(planeId) {
             const banner = document.getElementById('completion-banner');
@@ -750,12 +765,7 @@
         function initHeroReveal() {
             initTailwind();
             
-            // Make sure game state is loaded
-            if (window.VetsRush && window.VetsRush.loadGameState) {
-                window.VetsRush.loadGameState();
-            }
-            
-            // Update resources
+            // Update resources from shared Vets Rush inventory
             updateResourceBar();
             
             // Set initial plane
@@ -795,7 +805,7 @@
             });
             
             // Welcome toast for first time
-            if (!localStorage.getItem('heroRevealSeen')) {
+            if (!window.VetsRush.hasSeenTutorial('heroRevealSeen')) {
                 setTimeout(() => {
                     const toast = document.createElement('div');
                     toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 border border-emerald-500/30 px-6 py-3 rounded-3xl text-sm shadow-2xl flex items-center gap-3 z-[300]';
@@ -806,7 +816,7 @@
                         </div>
                     `;
                     document.body.appendChild(toast);
-                    
+            
                     setTimeout(() => {
                         toast.style.transition = 'all 0.4s';
                         toast.style.opacity = '0';
@@ -814,8 +824,8 @@
                         setTimeout(() => toast.remove(), 400);
                     }, 3800);
                 }, 2200);
-                
-                localStorage.setItem('heroRevealSeen', 'true');
+            
+                window.VetsRush.markTutorialSeen('heroRevealSeen');
             }
             
             // Expose for debugging / future integration
@@ -846,15 +856,10 @@
         
         // Boot
         window.addEventListener('load', () => {
-            // Ensure game-state.js is loaded
-            setTimeout(() => {
-                if (typeof window.VetsRush === 'undefined') {
-                    console.warn('VetsRush not found - using fallback game state');
-                    window.game = window.game || { heroCoins: 500000, stars: 12, shields: 5, medals: 3, flags: 4, helmets: 2, homes: 8, beds: 6 };
-                }
-                initHeroReveal();
-            }, 80);
-        });
+		    setTimeout(() => {
+		        initHeroReveal();
+		    }, 80);
+		});
         
         // Also update resources if VetsRush fires events (future proof)
         document.addEventListener('vetsrush:update', () => {

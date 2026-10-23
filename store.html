@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HERO STORE  | VETS RUSH</title>
+    <title>HERO STORE 🛡️ | VETS RUSH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -18,6 +18,15 @@
             line-height: 1;
             flex-shrink: 0;
             font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+        }
+        
+        .exchange-card {
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .exchange-card:hover {
+            transform: translateY(-2px);
+            border-color: #facc15;
         }
     </style>
 </head>
@@ -69,10 +78,10 @@
                         </div>
                         <div class="mt-4 flex items-center justify-between">
                             <div class="flex items-center gap-x-2 text-emerald-400">
-                                <span class="emoji-logo" style="font-size: 1.6rem;"></span>
-                                <span class="font-mono text-xl font-bold">8</span>
+                                <span class="emoji-logo" style="font-size: 1.6rem;">&#x1F6E1;&#xFE0F;</span>
+                                <span id="cost-extraLife" class="font-mono text-xl font-bold">8  + 1.5K </span>
                             </div>
-                            <button onclick="buyUpgrade('extraLife', 8, 'Extra Life')" 
+                            <button id="btn-extraLife" onclick="buyUpgrade('extraLife', 'Extra Life')"
                                     class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-2xl font-bold text-sm">BUY</button>
                         </div>
                     </div>
@@ -91,10 +100,10 @@
                         </div>
                         <div class="mt-4 flex items-center justify-between">
                             <div class="flex items-center gap-x-2 text-emerald-400">
-                                <span class="emoji-logo" style="font-size: 1.6rem;"></span>
-                                <span class="font-mono text-xl font-bold">6</span>
+                                <span class="emoji-logo" style="font-size: 1.6rem;">&#x1F6E1;&#xFE0F;</span>
+                                <span id="cost-shieldDuration" class="font-mono text-xl font-bold">6  + 1K </span>
                             </div>
-                            <button onclick="buyUpgrade('shieldDuration', 6, 'Shield Duration')" 
+                            <button id="btn-shieldDuration" onclick="buyUpgrade('shieldDuration', 'Shield Duration')"
                                     class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-2xl font-bold text-sm">BUY</button>
                         </div>
                     </div>
@@ -113,10 +122,10 @@
                         </div>
                         <div class="mt-4 flex items-center justify-between">
                             <div class="flex items-center gap-x-2 text-emerald-400">
-                                <span class="emoji-logo" style="font-size: 1.6rem;"></span>
-                                <span class="font-mono text-xl font-bold">10</span>
+                                <span class="emoji-logo" style="font-size: 1.6rem;">&#x1F6E1;&#xFE0F;</span>
+                                <span id="cost-reinforcedShield" class="font-mono text-xl font-bold">10  + 1.25K </span>
                             </div>
-                            <button onclick="buyUpgrade('reinforcedShield', 10, 'Reinforced Shield')" 
+                            <button id="btn-reinforcedShield" onclick="buyUpgrade('reinforcedShield', 'Reinforced Shield')"
                                     class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-2xl font-bold text-sm">BUY</button>
                         </div>
                     </div>
@@ -129,64 +138,187 @@
             Upgrades are permanent and apply to every Eagle Strike run.<br>
             Earn more Shields by playing Hero Reveal, completing Tasks, or high scores in other games.
         </div>
+        
+        <!-- VALOR EXCHANGE - START -->
+        <div class="mt-8 bg-slate-900 border border-slate-700 rounded-3xl p-6">
+            <div class="text-center mb-5">
+                <div class="text-4xl mb-2"></div>
+                <div class="text-2xl font-bold text-amber-400">Valor Exchange</div>
+                <div class="text-sm text-slate-400 mt-1">
+                    Trade Hero Coins for Valor Chips to spin Valor Slots
+                </div>
+            </div>
+        
+            <div class="grid grid-cols-1 gap-4">
+                <div class="exchange-card bg-slate-950 border border-slate-700 rounded-2xl p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <div class="text-xl font-black text-white">5 Valor Chips</div>
+                            <div class="text-sm text-slate-400">Starter refill</div>
+                        </div>
+        
+                        <button onclick="buyValorBundle(500, 5, '5 Valor Chips')"
+                                class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl">
+                            500 
+                        </button>
+                    </div>
+                </div>
+        
+                <div class="exchange-card bg-slate-950 border border-slate-700 rounded-2xl p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <div class="text-xl font-black text-white">12 Valor Chips</div>
+                            <div class="text-sm text-emerald-400">Small bonus bundle</div>
+                        </div>
+        
+                        <button onclick="buyValorBundle(1000, 12, '12 Valor Chips')"
+                                class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl">
+                            1,000 
+                        </button>
+                    </div>
+                </div>
+        
+                <div class="exchange-card bg-slate-950 border border-slate-700 rounded-2xl p-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <div class="text-xl font-black text-white">35 Valor Chips</div>
+                            <div class="text-sm text-emerald-400">Best value for now</div>
+                        </div>
+        
+                        <button onclick="buyValorBundle(2500, 35, '35 Valor Chips')"
+                                class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl">
+                            2,500 
+                        </button>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="mt-5 grid grid-cols-2 gap-3 text-center">
+                <div class="bg-slate-800 rounded-2xl px-4 py-3">
+                    <div class="text-xs text-slate-400 font-bold">HERO COINS</div>
+                    <div id="store-hero-coins" class="font-mono text-xl font-black text-amber-400">0</div>
+                </div>
+        
+                <div class="bg-slate-800 rounded-2xl px-4 py-3">
+                    <div class="text-xs text-slate-400 font-bold">VALOR CHIPS</div>
+                    <div id="store-valor-count" class="font-mono text-xl font-black text-emerald-400">0</div>
+                </div>
+            </div>
+        </div>
+        <!-- VALOR EXCHANGE - END -->
     </div>
-
+	<script src="game-state.js"></script>
     <script>
-        let gameState = JSON.parse(localStorage.getItem('vetsRushState')) || {
-            heroCoins: 3277350, stars: 0, flags: 0, homes: 12, medals: 0,
-            torpedoes: 0, freedom: 0, valor: 0, shields: 0,
-            extraLives: 0, shieldDuration: 0, reinforcedShield: 0
-        };
-
-        function saveGameState() {
-            localStorage.setItem('vetsRushState', JSON.stringify(gameState));
+        function formatNumber(num) {
+            num = Number(num) || 0;
+        
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1).replace('.0', '') + 'M';
+            }
+        
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace('.0', '') + 'K';
+            }
+        
+            return String(num);
         }
-
-        function updateUI() {
-            document.getElementById('shield-count').innerText = gameState.shields || 0;
-            document.getElementById('owned-extraLife').innerText = gameState.extraLives || 0;
-            document.getElementById('owned-shieldDuration').innerText = gameState.shieldDuration || 0;
-            document.getElementById('bonus-duration').innerText = (gameState.shieldDuration || 0) * 1;
-            document.getElementById('owned-reinforced').innerText = gameState.reinforcedShield || 0;
-            document.getElementById('bonus-hits').innerText = (gameState.reinforcedShield || 0) * 1;
+        
+        function setText(id, value) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = value;
+            }
         }
-
-        function buyUpgrade(type, cost, name) {
-            if ((gameState.shields || 0) < cost) {
-                alert("Not enough Shields! Play Hero Reveal or complete Tasks to earn more.");
+        
+        function updateUpgradeCard(type, ownedId, costId, buttonId) {
+            const level = window.VetsRush.getUpgradeLevel(type);
+            const config = window.VetsRush.UPGRADE_CONFIG[type];
+            const cost = window.VetsRush.getUpgradeCost(type);
+            const btn = document.getElementById(buttonId);
+        
+            setText(ownedId, level);
+        
+            if (!cost) {
+                setText(costId, `MAX LEVEL`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerText = "MAXED";
+                    btn.classList.add("opacity-50");
+                }
                 return;
             }
-
-            gameState.shields -= cost;
-
-            if (type === 'extraLife') {
-                gameState.extraLives = (gameState.extraLives || 0) + 1;
-            } else if (type === 'shieldDuration') {
-                gameState.shieldDuration = (gameState.shieldDuration || 0) + 1;
-            } else if (type === 'reinforcedShield') {
-                gameState.reinforcedShield = (gameState.reinforcedShield || 0) + 1;
+        
+            setText(
+                costId,
+                `${cost.shields}  + ${formatNumber(cost.heroCoins)} `
+            );
+        
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = `BUY L${level + 1}/${config.maxLevel}`;
+                btn.classList.remove("opacity-50");
             }
-
-            saveGameState();
-            updateUI();
-            
+        }
+        
+        function updateStoreUI() {
+            const inv = window.VetsRush.getInventory();
+        
+            setText('shield-count', inv.shields || 0);
+            setText('store-hero-coins', (inv.heroCoins || 0).toLocaleString());
+            setText('store-valor-count', inv.valor || 0);
+        
+            setText('owned-extraLife', inv.upgrades.extraLife || 0);
+            setText('owned-shieldDuration', inv.upgrades.shieldDuration || 0);
+            setText('bonus-duration', inv.upgrades.shieldDuration || 0);
+            setText('owned-reinforced', inv.upgrades.reinforcedShield || 0);
+            setText('bonus-hits', inv.upgrades.reinforcedShield || 0);
+        
+            updateUpgradeCard('extraLife', 'owned-extraLife', 'cost-extraLife', 'btn-extraLife');
+            updateUpgradeCard('shieldDuration', 'owned-shieldDuration', 'cost-shieldDuration', 'btn-shieldDuration');
+            updateUpgradeCard('reinforcedShield', 'owned-reinforced', 'cost-reinforcedShield', 'btn-reinforcedShield');
+        }
+        
+        function buyUpgrade(type, name) {
+            const cost = window.VetsRush.getUpgradeCost(type);
+        
+            if (!cost) {
+                alert(`${name} is already maxed out.`);
+                return;
+            }
+        
+            if (!window.VetsRush.buyGameUpgrade(type)) {
+                alert(`Not enough Shields or Hero Coins.\n\nNeed: ${cost.shields} Shields + ${cost.heroCoins.toLocaleString()} Hero Coins`);
+                return;
+            }
+        
+            updateStoreUI();
+        
             const btns = document.querySelectorAll('button');
             btns.forEach(b => b.style.transform = 'scale(0.95)');
             setTimeout(() => btns.forEach(b => b.style.transform = ''), 120);
-            
-            alert(` ${name} purchased! Your Eagle is now stronger.`);
+        
+            alert(` ${name} upgraded! Your Eagle is now stronger.`);
         }
-
+        
+        function buyValorBundle(cost, amount, name) {
+            if (!window.VetsRush.spend('heroCoins', cost)) {
+                alert(`Not enough Hero Coins. You need ${cost.toLocaleString()} Hero Coins.`);
+                return;
+            }
+        
+            window.VetsRush.addReward('valor', amount);
+        
+            updateStoreUI();
+        
+            alert(` ${name} purchased!`);
+        }
+        
         function exitToBase() {
-		    if (typeof saveGameState === 'function') {
-		        saveGameState();
-		    }
-		
-		    window.location.href = 'index.html';
-		}
-
-        // Init
-        updateUI();
+            window.VetsRush.saveGame();
+            window.location.href = 'index.html';
+        }
+        
+        updateStoreUI();
     </script>
 </body>
 </html>

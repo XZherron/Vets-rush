@@ -6,9 +6,15 @@
     <title>HERO CRUSH • VETS RUSH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<script src="game-state.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');
+        
+        html,
+        body {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
         
         body {
             font-family: 'Inter', system-ui, sans-serif;
@@ -18,18 +24,24 @@
         }
         
         .crush-tile {
-            width: 42px;
-            height: 42px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+        
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+        
             cursor: grab;
             transition: transform 0.1s ease, box-shadow 0.1s ease;
             user-select: none;
+        
             border-radius: 10px;
+        
             background: #1e2937;
             border: 2px solid #475569;
+        
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
         }
         
@@ -50,24 +62,56 @@
         
         .crush-grid {
             display: grid;
-            grid-template-columns: repeat(8, 1fr);
+        
+            grid-template-columns: repeat(8, minmax(0, 1fr));
+        
             gap: 4px;
+        
+            width: 100%;
+        
             background: #0f172a;
-            padding: 12px;
+        
+            padding: 10px;
+        
             border-radius: 20px;
+        
             border: 4px solid #475569;
+        
             box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+        
+            overflow: hidden;
+        
+            box-sizing: border-box;
         }
         
         .game-container {
-            max-width: 420px;
+            width: 100%;
+        
+            max-width: 100%;
+        
             margin: 0 auto;
+        
+            box-sizing: border-box;
         }
         
         .stat-box {
             background: #1e2937;
             border: 2px solid #475569;
             border-radius: 12px;
+        }
+        
+        .stat-box {
+            min-width: 0;
+            padding: 10px 12px !important;
+        }
+        
+        .stat-box .text-3xl {
+            font-size: 24px !important;
+            line-height: 1 !important;
+        }
+        
+        .stat-box i {
+            font-size: 26px !important;
         }
         
         .combo-text {
@@ -88,6 +132,510 @@
         .hero-crush-header {
             background: linear-gradient(to right, #dc2626, #b91c1c);
         }
+        
+        .score-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 14px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.88);
+            border: 2px solid rgba(250, 204, 21, 0.45);
+            box-shadow:
+                inset 0 0 12px rgba(255,255,255,0.04),
+                0 0 18px rgba(250,204,21,0.16);
+        }
+        
+        .score-strip span {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #94a3b8;
+        }
+        
+        .score-strip strong {
+            font-size: clamp(24px, 8vw, 40px);
+            line-height: 1;
+            color: #facc15;
+            font-weight: 950;
+        }
+        
+        /* ===============================
+        HERO CRUSH POLISH - START
+        =============================== */
+        
+        .crush-grid {
+            box-shadow:
+                inset 0 0 18px rgba(255,255,255,0.05),
+                inset 0 0 40px rgba(0,0,0,0.55),
+                0 0 12px rgba(0,255,180,0.18),
+                0 0 30px rgba(0,180,255,0.10),
+                0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+        
+        .crush-tile {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .crush-tile::after {
+            content: "";
+            position: absolute;
+            inset: 2px;
+            border-radius: 8px;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.12), transparent 55%);
+            pointer-events: none;
+        }
+        
+        .crush-tile:active {
+            transform: scale(0.94);
+            box-shadow:
+                0 0 0 3px rgba(220,38,38,0.85),
+                0 0 16px rgba(220,38,38,0.55);
+        }
+        
+        .crush-tile.selected {
+            transform: scale(1.05);
+            box-shadow:
+                0 0 0 3px rgba(250,204,21,0.95),
+                0 0 18px rgba(250,204,21,0.75);
+        }
+        
+        .crush-tile.matched {
+            animation: heroCrushPop 0.32s ease forwards;
+            box-shadow:
+                0 0 18px rgba(250,204,21,0.9),
+                0 0 28px rgba(34,197,94,0.55);
+        }
+        
+        @keyframes heroCrushPop {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+                filter: brightness(1);
+            }
+        
+            45% {
+                transform: scale(1.25);
+                opacity: 1;
+                filter: brightness(1.35);
+            }
+        
+            100% {
+                transform: scale(0);
+                opacity: 0;
+                filter: brightness(0.6);
+            }
+        }
+        
+        .combo-text {
+            z-index: 20;
+            text-shadow:
+                0 0 8px rgba(250,204,21,1),
+                0 0 18px rgba(249,115,22,0.9);
+        }
+        
+        .crush-tile.glow-flag {
+            box-shadow: 0 0 18px rgba(59,130,246,0.95);
+        }
+        
+        .crush-tile.glow-helmet {
+            box-shadow: 0 0 18px rgba(34,197,94,0.95);
+        }
+        
+        .crush-tile.glow-medal,
+        .crush-tile.glow-star {
+            box-shadow: 0 0 20px rgba(250,204,21,0.95);
+        }
+        
+        .crush-tile.glow-eagle {
+            box-shadow: 0 0 18px rgba(239,68,68,0.85);
+        }
+        
+        .crush-tile.glow-shield {
+            box-shadow: 0 0 18px rgba(96,165,250,0.95);
+        }
+        
+        .crush-tile.glow-fire {
+            box-shadow: 0 0 20px rgba(249,115,22,0.95);
+        }
+        
+        .stat-flash {
+            animation: statFlash 0.45s ease;
+        }
+        
+        @keyframes statFlash {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        
+            45% {
+                transform: scale(1.08);
+                filter: brightness(1.5);
+                text-shadow: 0 0 14px currentColor;
+            }
+        
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        }
+        
+        .floating-score {
+            position: absolute;
+            left: 50%;
+            top: 42%;
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            color: #facc15;
+            font-size: 30px;
+            font-weight: 950;
+            pointer-events: none;
+            text-shadow:
+                0 0 10px rgba(250,204,21,1),
+                0 0 22px rgba(249,115,22,0.9);
+            animation: floatingScorePop 0.9s ease forwards;
+        }
+        
+        @keyframes floatingScorePop {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -20%) scale(0.7);
+            }
+        
+            25% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+        
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -115%) scale(1);
+            }
+        }
+        
+        .board-shake {
+            animation: boardShake 0.28s ease;
+        }
+        
+        @keyframes boardShake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+        
+            20% {
+                transform: translateX(-4px);
+            }
+        
+            40% {
+                transform: translateX(4px);
+            }
+        
+            60% {
+                transform: translateX(-3px);
+            }
+        
+            80% {
+                transform: translateX(3px);
+            }
+        }
+        
+        .match-particle {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 40;
+            background: #facc15;
+            box-shadow: 0 0 10px rgba(250,204,21,0.9);
+            animation: particleBurst 0.65s ease-out forwards;
+        }
+        
+        @keyframes particleBurst {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+        
+            100% {
+                opacity: 0;
+                transform: translate(var(--px), var(--py)) scale(0);
+            }
+        }
+        
+        .crush-tile.refill-drop {
+            animation: refillDrop 0.28s ease-out;
+        }
+        
+        @keyframes refillDrop {
+            0% {
+                transform: translateY(-24px) scale(0.9);
+                opacity: 0;
+            }
+        
+            70% {
+                transform: translateY(4px) scale(1.03);
+                opacity: 1;
+            }
+        
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .invalid-swap {
+            animation: invalidSwap 0.28s ease;
+            box-shadow:
+                0 0 0 3px rgba(239,68,68,0.95),
+                0 0 18px rgba(239,68,68,0.75) !important;
+        }
+        
+        @keyframes invalidSwap {
+            0%, 100% {
+                transform: translateX(0);
+            }
+        
+            25% {
+                transform: translateX(-4px);
+            }
+        
+            50% {
+                transform: translateX(4px);
+            }
+        
+            75% {
+                transform: translateX(-3px);
+            }
+        }
+        
+        .end-screen-card {
+            background:
+                radial-gradient(circle at top, rgba(250,204,21,0.16), transparent 36%),
+                linear-gradient(180deg, rgba(15,23,42,0.98), rgba(2,6,23,0.98));
+            border: 2px solid rgba(250,204,21,0.65);
+            box-shadow:
+                0 0 24px rgba(250,204,21,0.24),
+                inset 0 0 18px rgba(255,255,255,0.05);
+            animation: endCardPop 0.35s ease-out;
+        }
+        
+        @keyframes endCardPop {
+            0% {
+                transform: scale(0.86);
+                opacity: 0;
+            }
+        
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .end-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #facc15, #b45309);
+            box-shadow: 0 0 22px rgba(250,204,21,0.75);
+            font-size: 42px;
+            margin-bottom: 14px;
+        }
+        
+        .new-high-score-badge {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #fde68a, #facc15, #b45309);
+            color: #111827;
+            font-size: 12px;
+            font-weight: 950;
+            letter-spacing: 0.08em;
+            box-shadow:
+                0 0 14px rgba(250,204,21,0.75),
+                inset 0 2px 0 rgba(255,255,255,0.45);
+            animation: badgePulse 1.2s infinite ease-in-out;
+        }
+        
+        @keyframes badgePulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+        
+            50% {
+                transform: scale(1.06);
+            }
+        }
+        
+        .reward-prize-list {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .reward-prize-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background:
+                linear-gradient(180deg, rgba(30,41,59,0.96), rgba(15,23,42,0.96));
+            border: 1px solid rgba(250,204,21,0.28);
+            border-radius: 14px;
+            padding: 9px 11px;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.06),
+                0 0 10px rgba(250,204,21,0.08);
+        }
+        
+        .reward-prize-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 800;
+        }
+        
+        .reward-prize-icon {
+            font-size: 18px;
+        }
+        
+        .reward-prize-value {
+            color: #facc15;
+            font-weight: 950;
+            font-size: 15px;
+        }
+        
+        .crush-tile.power-bomb {
+            background: linear-gradient(180deg, #7f1d1d, #1e293b);
+            border-color: #f97316;
+            box-shadow:
+                0 0 0 2px rgba(249,115,22,0.65),
+                0 0 18px rgba(249,115,22,0.85);
+        }
+        
+        .crush-tile.power-eagle {
+            background: linear-gradient(180deg, #1e3a8a, #020617);
+            border-color: #facc15;
+            box-shadow:
+                0 0 0 2px rgba(250,204,21,0.75),
+                0 0 22px rgba(59,130,246,0.95);
+        }
+        
+        .crush-tile.special-created {
+            animation: specialCreated 0.45s ease-out;
+        }
+        
+        @keyframes specialCreated {
+            0% {
+                transform: scale(0.4) rotate(-12deg);
+                opacity: 0;
+            }
+        
+            65% {
+                transform: scale(1.18) rotate(6deg);
+                opacity: 1;
+            }
+        
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+        
+        .power-activate {
+            animation: powerActivate 0.35s ease forwards;
+        }
+        
+        @keyframes powerActivate {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        
+            50% {
+                transform: scale(1.22);
+                filter: brightness(1.7);
+            }
+        
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        
+        .combo-screen-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            pointer-events: none;
+            opacity: 0;
+            animation: comboScreenFlash 0.45s ease-out forwards;
+        }
+        
+        .combo-screen-flash.bomb {
+            background: radial-gradient(circle, rgba(249,115,22,0.42), transparent 62%);
+        }
+        
+        .combo-screen-flash.eagle {
+            background: radial-gradient(circle, rgba(59,130,246,0.42), transparent 62%);
+        }
+        
+        .combo-screen-flash.freedom {
+            background: radial-gradient(circle, rgba(250,204,21,0.45), transparent 62%);
+        }
+        
+        @keyframes comboScreenFlash {
+            0% {
+                opacity: 0;
+            }
+        
+            25% {
+                opacity: 1;
+            }
+        
+            100% {
+                opacity: 0;
+            }
+        }
+        
+        .board-shake-medium {
+            animation: boardShakeMedium 0.38s ease;
+        }
+        
+        .board-shake-heavy {
+            animation: boardShakeHeavy 0.48s ease;
+        }
+        
+        @keyframes boardShakeMedium {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 2px); }
+            40% { transform: translate(6px, -2px); }
+            60% { transform: translate(-4px, 1px); }
+            80% { transform: translate(4px, -1px); }
+        }
+        
+        @keyframes boardShakeHeavy {
+            0%, 100% { transform: translate(0, 0); }
+            15% { transform: translate(-8px, 3px); }
+            30% { transform: translate(8px, -3px); }
+            45% { transform: translate(-7px, 2px); }
+            60% { transform: translate(7px, -2px); }
+            75% { transform: translate(-4px, 1px); }
+        }
+        
+        /* ===============================
+        HERO CRUSH POLISH - END
+        =============================== */
     </style>
 </head>
 <body class="bg-slate-950 text-white pb-20">
@@ -102,27 +650,6 @@
                 <div class="text-[10px] text-slate-400 -mt-1">MATCH FOR GLORY • VETS RUSH</div>
             </div>
         </div>
-        <div class="flex items-center gap-x-2">
-            <div class="bg-slate-800 px-3 py-1 rounded-2xl flex items-center gap-x-2 text-sm">
-                <i class="fa-solid fa-globe text-emerald-400"></i>
-                <span class="font-mono">11.5M</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Bar -->
-    <div class="px-4 py-3 bg-slate-900 flex items-center justify-between border-b border-slate-700">
-        <div class="flex items-center gap-x-3">
-            <div class="w-9 h-9 bg-yellow-500 rounded-full flex items-center justify-center text-xl">🪖</div>
-            <div>
-                <div class="font-bold" id="player-name">PatriotVet69</div>
-                <div class="text-xs text-slate-400">LVL 14 • Rank #8,472</div>
-            </div>
-        </div>
-        <div class="text-right">
-            <div class="font-mono text-xl font-bold text-yellow-400" id="hero-coins">3,277,350</div>
-            <div class="text-[10px] text-slate-400">HERO COINS 🪙</div>
-        </div>
     </div>
 
     <!-- Game Stats -->
@@ -134,11 +661,6 @@
                     <div class="text-3xl font-bold text-emerald-400" id="moves-left">30</div>
                 </div>
                 <i class="fa-solid fa-bomb text-3xl text-emerald-400"></i>
-            </div>
-            
-            <div class="stat-box px-4 py-2 text-center">
-                <div class="text-[10px] text-slate-400">SCORE</div>
-                <div class="text-3xl font-bold text-yellow-400" id="score">0</div>
             </div>
             
             <div class="stat-box px-4 py-2 flex items-center gap-x-3">
@@ -154,8 +676,27 @@
     <!-- Game Grid -->
     <div class="px-4">
         <div class="game-container mx-auto">
+
+            <div class="mission-panel">
+                <div class="mission-header">
+                    <span>MISSION</span>
+                    <span id="mission-progress">0 / 0</span>
+                </div>
+        
+                <div id="mission-text" class="mission-text">
+                    Loading Mission...
+                </div>
+        
+                <div class="mission-bar-wrap">
+                    <div id="mission-bar" class="mission-bar"></div>
+                </div>
+            </div>
+        
             <div id="crush-grid" class="crush-grid mx-auto"></div>
-            
+            <div class="score-strip mt-3">
+                <span>SCORE</span>
+                <strong id="score">0</strong>
+            </div>
             <div class="mt-4 flex justify-center gap-3">
                 <button onclick="reshuffleBoard()" 
                         class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-2xl flex items-center justify-center gap-x-2 text-sm">
@@ -179,15 +720,7 @@
         </div>
     </div>
 
-    <!-- Return Button -->
-    <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-        <button onclick="returnToBase()" 
-                class="bg-gradient-to-r from-red-600 to-blue-600 text-white font-bold px-8 py-3 rounded-3xl flex items-center justify-center gap-x-3 text-sm shadow-xl">
-            <i class="fa-solid fa-home"></i>
-            <span>RETURN TO BASE</span>
-        </button>
-    </div>
-
+	<script src="game-state.js"></script>
     <script>
         // Tailwind script
         function initTailwind() {
@@ -197,44 +730,50 @@
         // Game constants
         const GRID_SIZE = 8;
         const ICONS = ['🇺🇸', '🪖', '🎖️', '🦅', '⭐', '🛡️', '🔥'];
+        const POWER_BOMB = '💣';
+        const POWER_EAGLE = '🦅⚡';
+        const MISSION_SCORE = 'score';
+        const MISSION_MATCH_SYMBOL = 'symbol';
+        const MISSION_CREATE_POWER = 'power';
+        let pendingSpecialTiles = new Map();
         let grid = [];
         let score = 0;
+        let refilledTiles = new Set();
         let movesLeft = 30;
         let isProcessing = false;
         let selectedTile = null;
+        let activeMission = null;
         let highScore = 0;
+        let gameEnded = false;
         
-        // Load shared game state
-        let gameState = {
-            heroCoins: 3277350,
-            stars: 0,
-            flags: 0,
-            medals: 0,
-            homes: 12,
-            torpedoes: 0,
-            freedom: 0,
-            valor: 0
-        };
+        function loadHeroCrushState() {
+            const inv = window.VetsRush.getInventory();
         
-        function loadGameState() {
-            const saved = localStorage.getItem('vetsRushGameState');
-            if (saved) {
-                gameState = JSON.parse(saved);
+            const heroCoinsEl = document.getElementById('hero-coins');
+            if (heroCoinsEl) {
+                heroCoinsEl.textContent = (inv.heroCoins || 0).toLocaleString();
             }
-            
-            // Update UI
-            document.getElementById('hero-coins').textContent = gameState.heroCoins.toLocaleString();
-            document.getElementById('player-name').textContent = 'PatriotVet69';
-            
-            // Load high score
-            const savedHigh = localStorage.getItem('heroCrushHighScore');
-            if (savedHigh) highScore = parseInt(savedHigh);
+        
+            const playerNameEl = document.getElementById('player-name');
+            if (playerNameEl) {
+                playerNameEl.textContent = 'PatriotVet69';
+            }
+        
+            if (!inv.highScores) inv.highScores = {};
+            highScore = Number(inv.highScores.heroCrush || 0);
+        
             document.getElementById('high-score').textContent = highScore.toLocaleString();
+        
+            window.VetsRush.saveInventory(inv);
         }
         
-        function saveGameState() {
-            localStorage.setItem('vetsRushGameState', JSON.stringify(gameState));
-            localStorage.setItem('heroCrushHighScore', highScore);
+        function saveHeroCrushState() {
+            const inv = window.VetsRush.getInventory();
+        
+            if (!inv.highScores) inv.highScores = {};
+            inv.highScores.heroCrush = highScore;
+        
+            window.VetsRush.saveInventory(inv);
         }
         
         // Create initial grid
@@ -285,6 +824,18 @@
                     tile.dataset.row = r;
                     tile.dataset.col = c;
                     tile.innerHTML = grid[r][c];
+                    if (grid[r][c] === POWER_BOMB) {
+                        tile.classList.add('power-bomb');
+                    }
+                    
+                    if (grid[r][c] === POWER_EAGLE) {
+                        tile.classList.add('power-eagle');
+                    }
+                    const tileKey = `${r},${c}`;
+
+                    if (refilledTiles.has(tileKey)) {
+                        tile.classList.add('refill-drop');
+                    }
                     
                     // Drag events
                     tile.addEventListener('dragstart', (e) => {
@@ -311,32 +862,498 @@
                     
                     // Click to select / swap
                     tile.addEventListener('click', () => {
-                        if (isProcessing) return;
-                        
-                        if (!selectedTile) {
-                            selectedTile = {row: r, col: c};
-                            tile.style.boxShadow = '0 0 0 4px #dc2626';
-                        } else {
-                            const fromR = selectedTile.row;
-                            const fromC = selectedTile.col;
-                            
-                            if (Math.abs(fromR - r) + Math.abs(fromC - c) === 1) {
-                                swapTiles(fromR, fromC, r, c);
-                            }
-                            
-                            // Reset selection
-                            document.querySelectorAll('.crush-tile').forEach(t => t.style.boxShadow = '0 4px 6px -1px rgb(0 0 0 / 0.3)');
-                            selectedTile = null;
+                    if (isProcessing) return;
+                
+                    if (!selectedTile) {
+                        selectedTile = { row: r, col: c };
+                        tile.classList.add('selected');
+                        return;
+                    }
+                
+                    const fromR = selectedTile.row;
+                    const fromC = selectedTile.col;
+                
+                    if (fromR === r && fromC === c) {
+                        document.querySelectorAll('.crush-tile').forEach(t => t.classList.remove('selected'));
+                        selectedTile = null;
+                
+                        if (activatePowerTile(r, c)) {
+                            isProcessing = true;
+                            setTimeout(() => {
+                                isProcessing = false;
+                            }, 900);
                         }
-                    });
+                
+                        return;
+                    }
+                
+                    if (Math.abs(fromR - r) + Math.abs(fromC - c) === 1) {
+                        swapTiles(fromR, fromC, r, c);
+                    }
+                
+                    document.querySelectorAll('.crush-tile').forEach(t => t.classList.remove('selected'));
+                    selectedTile = null;
+                });
                     
                     container.appendChild(tile);
                 }
             }
         }
         
+        function markInvalidSwap(r1, c1, r2, c2) {
+            const board = document.getElementById('crush-grid');
+            if (!board) return;
+        
+            const firstTile = board.children[r1 * GRID_SIZE + c1];
+            const secondTile = board.children[r2 * GRID_SIZE + c2];
+        
+            [firstTile, secondTile].forEach(tile => {
+                if (!tile) return;
+        
+                tile.classList.remove('invalid-swap');
+                void tile.offsetWidth;
+                tile.classList.add('invalid-swap');
+            });
+        }
+        
+        function activatePowerTile(r, c) {
+            const power = grid[r][c];
+        
+            if (power !== POWER_BOMB && power !== POWER_EAGLE) return false;
+        
+            const board = document.getElementById('crush-grid');
+            const tile = board.children[r * GRID_SIZE + c];
+        
+            if (tile) {
+                tile.classList.add('power-activate');
+                burstParticles(tile);
+            }
+        
+            setTimeout(() => {
+                if (power === POWER_BOMB) {
+                    playBombActivateSound();
+                    clearBombArea(r, c);
+                }
+                
+                if (power === POWER_EAGLE) {
+                    playEagleActivateSound();
+                    clearEagleLines(r, c);
+                }
+            }, 220);
+        
+            return true;
+        }
+        
+        function collectPowerChainTargets(targets, triggeredKeys = new Set()) {
+            const powerTargets = [];
+        
+            targets.forEach(group => {
+                group.forEach(pos => {
+                    const key = `${pos.r},${pos.c}`;
+                    const power = grid[pos.r]?.[pos.c];
+        
+                    if (
+                        !triggeredKeys.has(key) &&
+                        (power === POWER_BOMB || power === POWER_EAGLE)
+                    ) {
+                        triggeredKeys.add(key);
+                        powerTargets.push({ r: pos.r, c: pos.c, power });
+                    }
+                });
+            });
+        
+            return powerTargets;
+        }
+        
+        function flashPowerTile(r, c) {
+            const board = document.getElementById('crush-grid');
+            if (!board) return;
+        
+            const tile = board.children[r * GRID_SIZE + c];
+            if (!tile) return;
+        
+            tile.classList.remove('power-activate');
+            void tile.offsetWidth;
+            tile.classList.add('power-activate');
+        
+            burstParticles(tile);
+        }
+        
+        function triggerPowerChains(powerTargets, triggeredKeys) {
+            powerTargets.forEach((target, index) => {
+                setTimeout(() => {
+                    flashPowerTile(target.r, target.c);
+        
+                    setTimeout(() => {
+                        if (target.power === POWER_BOMB) {
+                            playBombActivateSound();
+                            clearBombArea(target.r, target.c, triggeredKeys);
+                        }
+                        
+                        if (target.power === POWER_EAGLE) {
+                            playEagleActivateSound();
+                            clearEagleLines(target.r, target.c, triggeredKeys);
+                        }
+                    }, 220);
+        
+                }, 220 * (index + 1));
+            });
+        }
+        
+        function getChainMultiplier(triggeredKeys) {
+            const chainDepth = triggeredKeys ? triggeredKeys.size : 0;
+        
+            if (chainDepth >= 4) return 3;
+            if (chainDepth >= 2) return 2;
+        
+            return 1;
+        }
+        
+        function getBombRadius(triggeredKeys) {
+            const chainDepth = triggeredKeys ? triggeredKeys.size : 0;
+        
+            if (chainDepth >= 4) return 2;
+            return 1;
+        }
+        
+        function clearBombArea(row, col, triggeredKeys = new Set()) {
+            const targets = [];
+        
+            const radius = getBombRadius(triggeredKeys);
+
+            for (let r = row - radius; r <= row + radius; r++) {
+                for (let c = col - radius; c <= col + radius; c++) {
+                    if (r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE) {
+                        targets.push([{ r, c }]);
+                    }
+                }
+            }
+            
+            const powerTargets = collectPowerChainTargets(targets, triggeredKeys);
+            
+            const chainMultiplier = getChainMultiplier(triggeredKeys);
+            const points = targets.length * 150 * chainMultiplier;
+            
+            score += points;
+            animateScore(score - points, score);
+            flashStat('score');
+            showFloatingScore(points);
+            
+            if (chainMultiplier > 1) {
+                showComboText(chainMultiplier);
+                shakeBoard();
+                playComboSound();
+            }
+        
+            removeMatches(targets);
+            if (radius > 1) {
+                shakeBoard();
+                showFloatingScore("MEGA BLAST");
+            }
+            triggerPowerChains(powerTargets, triggeredKeys);
+        
+            setTimeout(() => {
+                dropTiles();
+                setTimeout(() => {
+                    refillGrid();
+                    setTimeout(() => {
+                        if (hasMatches()) processMatches();
+                        else checkGameEnd();
+                    }, 300);
+                }, 350);
+            }, 300);
+        }
+        
+        function getEagleSweepSize(triggeredKeys) {
+            const chainDepth = triggeredKeys ? triggeredKeys.size : 0;
+        
+            if (chainDepth >= 4) return 2;
+            return 1;
+        }
+        
+        function clearMatchingTiles(symbol, triggeredKeys = new Set()) {
+            const targets = [];
+        
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+        
+                    const tile = grid[r][c];
+        
+                    if (
+                        tile &&
+                        tile !== POWER_BOMB &&
+                        tile !== POWER_EAGLE &&
+                        tile === symbol
+                    ) {
+                        targets.push([{ r, c }]);
+                    }
+                }
+            }
+            
+            if (targets.length === 0) return;
+            
+            const powerTargets = collectPowerChainTargets(targets, triggeredKeys);
+        
+            const points = targets.length * 180;
+
+            score += points;
+            animateScore(score - points, score);
+        
+            flashStat('score');
+        
+            showFloatingScore(`${targets.length} TARGETS`);
+        
+            shakeBoardStrong("medium");
+        
+            removeMatches(targets);
+            triggerPowerChains(powerTargets, triggeredKeys);
+        }
+        
+        function clearEagleLines(row, col, triggeredKeys = new Set()) {
+            const targets = [];
+        
+            const sweepSize = getEagleSweepSize(triggeredKeys);
+
+            for (let offset = -sweepSize + 1; offset <= sweepSize - 1; offset++) {
+                const targetRow = row + offset;
+            
+                if (targetRow >= 0 && targetRow < GRID_SIZE) {
+                    for (let c = 0; c < GRID_SIZE; c++) {
+                        targets.push([{ r: targetRow, c }]);
+                    }
+                }
+            }
+            
+            for (let offset = -sweepSize + 1; offset <= sweepSize - 1; offset++) {
+                const targetCol = col + offset;
+            
+                if (targetCol >= 0 && targetCol < GRID_SIZE) {
+                    for (let r = 0; r < GRID_SIZE; r++) {
+                        if (r !== row) {
+                            targets.push([{ r, c: targetCol }]);
+                        }
+                    }
+                }
+            }
+            
+            const powerTargets = collectPowerChainTargets(targets, triggeredKeys);
+            
+            const chainMultiplier = getChainMultiplier(triggeredKeys);
+            const points = targets.length * 200 * chainMultiplier;
+            
+            score += points;
+            animateScore(score - points, score);
+            flashStat('score');
+            showFloatingScore(points);
+            
+            if (chainMultiplier > 1) {
+                showComboText(chainMultiplier);
+                shakeBoard();
+                playComboSound();
+            }
+        
+            removeMatches(targets);
+            if (sweepSize > 1) {
+                shakeBoard();
+                showFloatingScore("EAGLE STORM");
+                playComboSound();
+            }
+            triggerPowerChains(powerTargets, triggeredKeys);
+        
+            setTimeout(() => {
+                dropTiles();
+                setTimeout(() => {
+                    refillGrid();
+                    setTimeout(() => {
+                        if (hasMatches()) processMatches();
+                        else checkGameEnd();
+                    }, 300);
+                }, 350);
+            }, 300);
+        }
+        
+        function isPowerTile(value) {
+            return value === POWER_BOMB || value === POWER_EAGLE;
+        }
+        
+        function clearFullBoardCombo(label = "FULL FORCE") {
+            const targets = [];
+        
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    targets.push([{ r, c }]);
+                }
+            }
+        
+            const points = targets.length * 250;
+        
+            score += points;
+            animateScore(score - points, score);
+            flashStat('score');
+            showFloatingScore(label);
+            shakeBoard();
+            playComboSound();
+        
+            removeMatches(targets);
+        
+            setTimeout(() => {
+                dropTiles();
+        
+                setTimeout(() => {
+                    refillGrid();
+        
+                    setTimeout(() => {
+                        if (hasMatches()) processMatches();
+                        else checkGameEnd();
+                    }, 300);
+                }, 350);
+            }, 300);
+        }
+        
+        function showComboFlash(type = "freedom") {
+            const flash = document.createElement('div');
+            flash.className = `combo-screen-flash ${type}`;
+        
+            document.body.appendChild(flash);
+        
+            setTimeout(() => {
+                if (flash.parentNode) flash.remove();
+            }, 500);
+        }
+        
+        function handlePowerSwap(r1, c1, r2, c2) {
+            const firstPower = grid[r1][c1];
+            const secondPower = grid[r2][c2];
+            if (isPowerTile(firstPower) && isPowerTile(secondPower)) {
+                grid[r1][c1] = null;
+                grid[r2][c2] = null;
+                renderGrid();
+            
+                setTimeout(() => {
+                    if (firstPower === POWER_BOMB && secondPower === POWER_BOMB) {
+                        showFloatingScore("DOUBLE BLAST");
+                        showComboFlash("bomb");
+                        playDoubleBlastSound();
+                        clearBombArea(r1, c1);
+                        clearBombArea(r2, c2);
+                        shakeBoardStrong("medium");
+                    }
+            
+                    if (firstPower === POWER_EAGLE && secondPower === POWER_EAGLE) {
+                        clearFullBoardCombo("EAGLE STORM");
+                        showComboFlash("eagle");
+                        playEagleStormSound();
+                        shakeBoardStrong("heavy");
+                    }
+            
+                    if (
+                        (firstPower === POWER_BOMB && secondPower === POWER_EAGLE) ||
+                        (firstPower === POWER_EAGLE && secondPower === POWER_BOMB)
+                    ) {
+                        showFloatingScore("FREEDOM STRIKE");
+                        showComboFlash("freedom");
+                        playFreedomStrikeSound();
+                        clearBombArea(r1, c1, new Set(["combo-bomb", "combo-eagle", "combo-boost", "combo-force"]));
+                        clearEagleLines(r2, c2, new Set(["combo-bomb", "combo-eagle", "combo-boost", "combo-force"]));
+                        shakeBoardStrong("heavy");
+                    }
+                }, 120);
+            
+                return true;
+            }
+        
+            if (!isPowerTile(firstPower) && !isPowerTile(secondPower)) {
+                return false;
+            }
+        
+            // If the first selected tile is a power tile, activate it at the destination.
+            if (isPowerTile(firstPower)) {
+
+                const targetSymbol = grid[r2][c2];
+            
+                grid[r1][c1] = targetSymbol;
+                grid[r2][c2] = firstPower;
+            
+                renderGrid();
+            
+                setTimeout(() => {
+            
+                    if (firstPower === POWER_EAGLE) {
+            
+                        playEagleActivateSound();
+            
+                        clearMatchingTiles(targetSymbol);
+            
+                        setTimeout(() => {
+                            dropTiles();
+            
+                            setTimeout(() => {
+                                refillGrid();
+            
+                                setTimeout(() => {
+                                    if (hasMatches()) processMatches();
+                                    else checkGameEnd();
+                                }, 250);
+                            }, 250);
+                        }, 250);
+            
+                    } else {
+            
+                        activatePowerTile(r2, c2);
+            
+                    }
+            
+                }, 120);
+            
+                return true;
+            }
+        
+            // If the second tile is a power tile, activate it at the destination.
+            if (isPowerTile(secondPower)) {
+            const targetSymbol = grid[r1][c1];
+        
+            grid[r2][c2] = targetSymbol;
+            grid[r1][c1] = secondPower;
+        
+            renderGrid();
+        
+            setTimeout(() => {
+                if (secondPower === POWER_EAGLE) {
+                    playEagleActivateSound();
+                    clearMatchingTiles(targetSymbol);
+        
+                    setTimeout(() => {
+                        dropTiles();
+        
+                        setTimeout(() => {
+                            refillGrid();
+        
+                            setTimeout(() => {
+                                if (hasMatches()) processMatches();
+                                else checkGameEnd();
+                            }, 250);
+                        }, 250);
+                    }, 250);
+                } else {
+                    activatePowerTile(r1, c1);
+                }
+            }, 120);
+        
+            return true;
+        }
+        
+            return false;
+        }
+        
         function swapTiles(r1, c1, r2, c2) {
             if (isProcessing) return;
+            if (handlePowerSwap(r1, c1, r2, c2)) {
+                movesLeft--;
+                document.getElementById('moves-left').textContent = movesLeft;
+                flashStat('moves-left');
+                playSwapSound();
+                return;
+            }
             
             // Swap in grid
             const temp = grid[r1][c1];
@@ -344,21 +1361,116 @@
             grid[r2][c2] = temp;
             
             renderGrid();
+            playSwapSound();
             
             // Check for matches
             setTimeout(() => {
                 if (hasMatches()) {
                     movesLeft--;
                     document.getElementById('moves-left').textContent = movesLeft;
+                    flashStat('moves-left');
                     processMatches();
                 } else {
-                    // Swap back
-                    const temp2 = grid[r1][c1];
-                    grid[r1][c1] = grid[r2][c2];
-                    grid[r2][c2] = temp2;
-                    renderGrid();
+                    markInvalidSwap(r1, c1, r2, c2);
+                    playInvalidSound();
+                    
+                    setTimeout(() => {
+                        const temp2 = grid[r1][c1];
+                        grid[r1][c1] = grid[r2][c2];
+                        grid[r2][c2] = temp2;
+                        renderGrid();
+                    }, 220);
                 }
             }, 150);
+        }
+        
+        function animateScore(startValue, endValue) {
+            const scoreEl = document.getElementById('score');
+            if (!scoreEl) return;
+        
+            const duration = 280;
+            const startTime = performance.now();
+        
+            function update(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(startValue + (endValue - startValue) * eased);
+        
+                scoreEl.textContent = current.toLocaleString();
+        
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    scoreEl.textContent = endValue.toLocaleString();
+                }
+            }
+        
+            requestAnimationFrame(update);
+        }
+        
+        function flashStat(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+        
+            el.classList.remove('stat-flash');
+            void el.offsetWidth;
+            el.classList.add('stat-flash');
+        }
+        
+        function showFloatingScore(amount) {
+            const container = document.getElementById('crush-grid');
+            if (!container) return;
+        
+            const text = document.createElement('div');
+            text.className = 'floating-score';
+            text.textContent = typeof amount === "number"
+                ? `+${amount.toLocaleString()}`
+                : amount;
+        
+            container.appendChild(text);
+        
+            setTimeout(() => {
+                if (text.parentNode) text.remove();
+            }, 900);
+        }
+        
+        function shakeBoardStrong(level = "medium") {
+            const board = document.getElementById('crush-grid');
+            if (!board) return;
+        
+            const className = level === "heavy" ? "board-shake-heavy" : "board-shake-medium";
+        
+            board.classList.remove("board-shake", "board-shake-medium", "board-shake-heavy");
+            void board.offsetWidth;
+            board.classList.add(className);
+        }
+        
+        function shakeBoard() {
+            const board = document.getElementById('crush-grid');
+            if (!board) return;
+        
+            board.classList.remove('board-shake');
+            void board.offsetWidth;
+            board.classList.add('board-shake');
+        }
+        
+        function prepareSpecialTiles(matches) {
+            pendingSpecialTiles.clear();
+        
+            matches.forEach(match => {
+                if (match.length < 4) return;
+        
+                const centerPos = match[Math.floor(match.length / 2)];
+                const key = `${centerPos.r},${centerPos.c}`;
+        
+                if (match.length >= 5) {
+                    pendingSpecialTiles.set(key, POWER_EAGLE);
+                    updateMission(MISSION_CREATE_POWER);
+                } else if (match.length === 4) {
+                    pendingSpecialTiles.set(key, POWER_BOMB);
+                    updateMission(MISSION_CREATE_POWER);
+                }
+            });
         }
         
         function processMatches() {
@@ -380,15 +1492,34 @@
             // Combo multiplier
             const combo = Math.min(Math.floor(matches.length / 2) + 1, 5);
             matchScore *= combo;
+            if (combo > 1 || matches.length >= 2) {
+                shakeBoard();
+            }
             
+            const oldScore = score;
             score += matchScore;
-            document.getElementById('score').textContent = score.toLocaleString();
+            updateMission(MISSION_SCORE);
+            animateScore(oldScore, score);
+            flashStat('score');
+            showFloatingScore(matchScore);
+            playMatchSound();
+
+            if (combo > 1) {
+                playComboSound();
+            }
             
             // Show combo text
             if (combo > 1) {
                 showComboText(combo);
             }
             
+            matches.forEach(match => {
+                const matchedSymbol = grid[match[0].r][match[0].c];
+                updateMission(MISSION_MATCH_SYMBOL, match.length, matchedSymbol);
+            });
+            
+            prepareSpecialTiles(matches);
+
             // Remove matched tiles
             removeMatches(matches);
             
@@ -452,19 +1583,86 @@
             return matches;
         }
         
+        function getGlowClass(icon) {
+            switch (icon) {
+                case '🇺🇸': return 'glow-flag';
+                case '🪖': return 'glow-helmet';
+                case '🎖️': return 'glow-medal';
+                case '🦅': return 'glow-eagle';
+                case '⭐': return 'glow-star';
+                case '🛡️': return 'glow-shield';
+                case '🔥': return 'glow-fire';
+                default: return '';
+            }
+        }
+        
+        function burstParticles(tile) {
+            const board = document.getElementById('crush-grid');
+            if (!board || !tile) return;
+        
+            const boardRect = board.getBoundingClientRect();
+            const tileRect = tile.getBoundingClientRect();
+        
+            const centerX = tileRect.left - boardRect.left + tileRect.width / 2;
+            const centerY = tileRect.top - boardRect.top + tileRect.height / 2;
+        
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'match-particle';
+        
+                const angle = (Math.PI * 2 * i) / 8;
+                const distance = 18 + Math.random() * 12;
+        
+                particle.style.left = `${centerX}px`;
+                particle.style.top = `${centerY}px`;
+                particle.style.setProperty('--px', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--py', `${Math.sin(angle) * distance}px`);
+        
+                board.appendChild(particle);
+        
+                setTimeout(() => particle.remove(), 700);
+            }
+        }
+        
         function removeMatches(matches) {
             const container = document.getElementById('crush-grid');
             
             matches.forEach(match => {
                 match.forEach(pos => {
                     const tile = container.children[pos.r * GRID_SIZE + pos.c];
+                    const key = `${pos.r},${pos.c}`;
+                    const specialTile = pendingSpecialTiles.get(key);
+                    
                     if (tile) {
-                        tile.classList.add('matched');
-                        setTimeout(() => {
-                            if (tile.parentNode) tile.parentNode.removeChild(tile);
-                        }, 300);
+                        if (specialTile) {
+                            grid[pos.r][pos.c] = specialTile;
+                            tile.innerHTML = specialTile;
+                            tile.classList.add(specialTile === POWER_BOMB ? 'power-bomb' : 'power-eagle');
+                            tile.classList.add('special-created');
+                            burstParticles(tile);
+                            if (specialTile === POWER_BOMB) {
+                                playBombCreatedSound();
+                            }
+                            
+                            if (specialTile === POWER_EAGLE) {
+                                playEagleCreatedSound();
+                            }
+                        } else {
+                            const glowClass = getGlowClass(grid[pos.r][pos.c]);
+                            if (glowClass) tile.classList.add(glowClass);
+                            
+                            tile.classList.add('matched');
+                            burstParticles(tile);
+                    
+                            setTimeout(() => {
+                                if (tile.parentNode) tile.parentNode.removeChild(tile);
+                            }, 300);
+                    
+                            grid[pos.r][pos.c] = null;
+                        }
+                    } else if (!specialTile) {
+                        grid[pos.r][pos.c] = null;
                     }
-                    grid[pos.r][pos.c] = null;
                 });
             });
         }
@@ -496,11 +1694,15 @@
                 for (let c = 0; c < GRID_SIZE; c++) {
                     if (grid[r][c] === null) {
                         grid[r][c] = ICONS[Math.floor(Math.random() * ICONS.length)];
+                        refilledTiles.add(`${r},${c}`);
                     }
                 }
             }
             
             renderGrid();
+            setTimeout(() => {
+                refilledTiles.clear();
+            }, 350);
             
             // Make sure no immediate matches after refill
             setTimeout(() => {
@@ -533,7 +1735,72 @@
             }
         }
         
+        function animateFinalScore(finalScore) {
+            const scoreEl = document.getElementById('final-score-count');
+            if (!scoreEl) return;
+        
+            const duration = 900;
+            const startTime = performance.now();
+        
+            function update(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(finalScore * eased);
+        
+                scoreEl.textContent = current.toLocaleString();
+        
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    scoreEl.textContent = finalScore.toLocaleString();
+                }
+            }
+        
+            requestAnimationFrame(update);
+        }
+        
+        function launchHeroCrushConfetti() {
+            const colors = ['#facc15', '#ef4444', '#3b82f6', '#22c55e', '#ffffff'];
+        
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const conf = document.createElement('div');
+        
+                    conf.style.position = 'fixed';
+                    conf.style.left = Math.random() * 100 + 'vw';
+                    conf.style.top = '-20px';
+                    conf.style.width = '9px';
+                    conf.style.height = '9px';
+                    conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                    conf.style.zIndex = '9999';
+                    conf.style.pointerEvents = 'none';
+        
+                    document.body.appendChild(conf);
+        
+                    const fallTime = Math.random() * 1700 + 1800;
+        
+                    conf.animate([
+                        {
+                            transform: 'translateY(0) rotate(0deg)',
+                            opacity: 1
+                        },
+                        {
+                            transform: `translateY(${window.innerHeight + 120}px) rotate(${Math.random() * 720 + 360}deg)`,
+                            opacity: 0
+                        }
+                    ], {
+                        duration: fallTime,
+                        easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+                    }).onfinish = () => conf.remove();
+        
+                }, i * 14);
+            }
+        }
+        
         function endGame() {
+            if (gameEnded) return;
+            gameEnded = true;
             isProcessing = true;
             
             let rewardCoins = 0;
@@ -559,37 +1826,67 @@
                 rewardCoins = Math.floor(score / 10);
             }
             
-            // Update game state
-            gameState.heroCoins += rewardCoins;
-            gameState.stars = (gameState.stars || 0) + rewardStars;
-            gameState.medals = (gameState.medals || 0) + rewardMedals;
-            gameState.freedom = (gameState.freedom || 0) + rewardFreedom;
-            gameState.shields = (gameState.shields || 0) + rewardShields;
+            window.VetsRush.addReward('heroCoins', rewardCoins);
+            window.VetsRush.addReward('stars', rewardStars);
+            window.VetsRush.addReward('medals', rewardMedals);
+            window.VetsRush.addReward('freedom', rewardFreedom);
+            window.VetsRush.addReward('shields', rewardShields);
             
+            const isNewHighScore = score > highScore;
             // Update high score
             if (score > highScore) {
                 highScore = score;
                 document.getElementById('high-score').textContent = highScore.toLocaleString();
             }
             
-            saveGameState();
+            saveHeroCrushState();
             
             // Show results
             const resultHTML = `
                 <div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[100]">
-                    <div class="bg-slate-900 rounded-3xl p-8 max-w-sm w-full mx-4 text-center border border-slate-700">
-                        <div class="text-6xl mb-4">🦅</div>
+                    <div class="end-screen-card rounded-3xl p-8 max-w-sm w-full mx-4 text-center">
+                        <div class="end-badge">🦅</div>
                         <div class="text-3xl font-bold mb-2">MISSION COMPLETE</div>
-                        <div class="text-xl text-yellow-400 mb-6">FINAL SCORE: ${score.toLocaleString()}</div>
+                        ${isNewHighScore ? `<div class="new-high-score-badge">NEW HIGH SCORE</div>` : ''}
+                        <div class="text-xl text-yellow-400 mb-6">
+                            FINAL SCORE: <span id="final-score-count">0</span>
+                        </div>
                         
-                        <div class="bg-slate-800 rounded-2xl p-4 mb-6 text-left">
-                            <div class="flex justify-between py-1">
-                                <span>Hero Coins</span>
-                                <span class="font-bold text-yellow-400">+${rewardCoins}</span>
+                        <div class="reward-prize-list mb-6">
+                            <div class="reward-prize-card">
+                                <div class="reward-prize-left">
+                                    <span class="reward-prize-icon">🪙</span>
+                                    <span>Hero Coins</span>
+                                </div>
+                                <span class="reward-prize-value">+${rewardCoins}</span>
                             </div>
-                            ${rewardStars > 0 ? `<div class="flex justify-between py-1"><span>Stars</span><span class="font-bold text-yellow-400">+${rewardStars} ⭐</span></div>` : ''}
-                            ${rewardMedals > 0 ? `<div class="flex justify-between py-1"><span>Medals</span><span class="font-bold text-yellow-400">+${rewardMedals} 🎖️</span></div>` : ''}
-                            ${rewardFreedom > 0 ? `<div class="flex justify-between py-1"><span>Freedom Spins</span><span class="font-bold text-emerald-400">+${rewardFreedom} 🌀</span></div>` : ''}
+                        
+                            ${rewardStars > 0 ? `
+                            <div class="reward-prize-card">
+                                <div class="reward-prize-left">
+                                    <span class="reward-prize-icon">⭐</span>
+                                    <span>Stars</span>
+                                </div>
+                                <span class="reward-prize-value">+${rewardStars}</span>
+                            </div>` : ''}
+                        
+                            ${rewardMedals > 0 ? `
+                            <div class="reward-prize-card">
+                                <div class="reward-prize-left">
+                                    <span class="reward-prize-icon">🎖️</span>
+                                    <span>Medals</span>
+                                </div>
+                                <span class="reward-prize-value">+${rewardMedals}</span>
+                            </div>` : ''}
+                        
+                            ${rewardFreedom > 0 ? `
+                            <div class="reward-prize-card">
+                                <div class="reward-prize-left">
+                                    <span class="reward-prize-icon">🌀</span>
+                                    <span>Freedom Spins</span>
+                                </div>
+                                <span class="reward-prize-value">+${rewardFreedom}</span>
+                            </div>` : ''}
                         </div>
                         
                         <button onclick="location.reload()" 
@@ -606,6 +1903,10 @@
             `;
             
             document.body.insertAdjacentHTML('beforeend', resultHTML);
+            animateFinalScore(score);
+            if (isNewHighScore || score >= 12000) {
+                launchHeroCrushConfetti();
+            }
         }
         
         function reshuffleBoard() {
@@ -620,18 +1921,266 @@
         }
         
         function returnToBase() {
-		    // Save any remaining progress
-		    saveGameState();
-		    window.location.href = 'index.html';
-		}
+            saveHeroCrushState();
+            window.location.href = 'index.html';
+        }
+        
+        let heroCrushAudioCtx = null;
+
+        function getHeroCrushAudioCtx() {
+            if (!heroCrushAudioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return null;
+        
+                heroCrushAudioCtx = new AudioContext();
+            }
+        
+            if (heroCrushAudioCtx.state === "suspended") {
+                heroCrushAudioCtx.resume();
+            }
+        
+            return heroCrushAudioCtx;
+        }
+        
+        function playTone(freq, duration, type = "sine", volume = 0.03) {
+            const audioCtx = getHeroCrushAudioCtx();
+            if (!audioCtx) return;
+        
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+        
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                audioCtx.currentTime + duration
+            );
+        
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+        
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playSwapSound() {
+            playTone(420, 0.08, 'triangle', 0.025);
+        }
+        
+        function playMatchSound() {
+            playTone(620, 0.12, 'square', 0.03);
+        }
+        
+        function playComboSound() {
+            playTone(880, 0.18, 'sawtooth', 0.035);
+        }
+        
+        function playInvalidSound() {
+            playTone(180, 0.12, 'sawtooth', 0.03);
+        }
+        
+        function playBombCreatedSound() {
+            playTone(260, 0.08, 'sawtooth', 0.035);
+            setTimeout(() => playTone(360, 0.09, 'square', 0.03), 80);
+        }
+        
+        function playEagleCreatedSound() {
+            playTone(720, 0.08, 'triangle', 0.035);
+            setTimeout(() => playTone(980, 0.10, 'triangle', 0.035), 90);
+        }
+        
+        function playBombActivateSound() {
+            playTone(180, 0.08, 'sawtooth', 0.045);
+            setTimeout(() => playTone(120, 0.14, 'sawtooth', 0.04), 70);
+        }
+        
+        function playEagleActivateSound() {
+            playTone(760, 0.07, 'triangle', 0.04);
+            setTimeout(() => playTone(1040, 0.08, 'triangle', 0.04), 80);
+            setTimeout(() => playTone(1320, 0.10, 'triangle', 0.035), 160);
+        }
+        
+        function playDoubleBlastSound() {
+            playBombActivateSound();
+            setTimeout(playBombActivateSound, 140);
+            setTimeout(playComboSound, 260);
+        }
+        
+        function playEagleStormSound() {
+            playEagleActivateSound();
+            setTimeout(playEagleActivateSound, 160);
+            setTimeout(playComboSound, 320);
+        }
+        
+        function playFreedomStrikeSound() {
+            playBombActivateSound();
+            setTimeout(playEagleActivateSound, 120);
+            setTimeout(playComboSound, 300);
+        }
+        
+        function generateMission() {
+            const missions = [
+                {
+                    type: MISSION_SCORE,
+                    goal: 15000,
+                    progress: 0,
+                    reward: 500,
+                    text: 'Reach 15,000 Score'
+                },
+                {
+                    type: MISSION_SCORE,
+                    goal: 25000,
+                    progress: 0,
+                    reward: 1000,
+                    text: 'Reach 25,000 Score'
+                },
+                {
+                    type: MISSION_MATCH_SYMBOL,
+                    symbol: '⭐',
+                    goal: 18,
+                    progress: 0,
+                    reward: 750,
+                    text: 'Match 18 Stars'
+                },
+                {
+                    type: MISSION_MATCH_SYMBOL,
+                    symbol: '🇺🇸',
+                    goal: 20,
+                    progress: 0,
+                    reward: 750,
+                    text: 'Match 20 Flags'
+                },
+                {
+                    type: MISSION_MATCH_SYMBOL,
+                    symbol: '🛡️',
+                    goal: 16,
+                    progress: 0,
+                    reward: 800,
+                    text: 'Match 16 Shields'
+                },
+                {
+                    type: MISSION_MATCH_SYMBOL,
+                    symbol: '🔥',
+                    goal: 18,
+                    progress: 0,
+                    reward: 850,
+                    text: 'Match 18 Fire Tiles'
+                },
+                {
+                    type: MISSION_MATCH_SYMBOL,
+                    symbol: '🎖️',
+                    goal: 15,
+                    progress: 0,
+                    reward: 900,
+                    text: 'Match 15 Medals'
+                },
+                {
+                    type: MISSION_MATCH_SYMBOL,
+                    symbol: '🪖',
+                    goal: 16,
+                    progress: 0,
+                    reward: 850,
+                    text: 'Match 16 Helmets'
+                },
+                {
+                    type: MISSION_CREATE_POWER,
+                    goal: 3,
+                    progress: 0,
+                    reward: 1000,
+                    text: 'Create 3 Power Tiles'
+                },
+                {
+                    type: MISSION_CREATE_POWER,
+                    goal: 5,
+                    progress: 0,
+                    reward: 1800,
+                    text: 'Create 5 Power Tiles'
+                }
+            ];
+        
+            activeMission = JSON.parse(JSON.stringify(
+                missions[Math.floor(Math.random() * missions.length)]
+            ));
+        
+            renderMission();
+        }
+        
+        function renderMission() {
+            const missionText = document.getElementById('mission-text');
+            const missionBar = document.getElementById('mission-bar');
+            const missionProgress = document.getElementById('mission-progress');
+        
+            if (!activeMission || !missionText || !missionBar || !missionProgress) return;
+        
+            missionText.textContent = activeMission.text;
+        
+            const percent = Math.min(100, (activeMission.progress / activeMission.goal) * 100);
+            missionBar.style.width = `${percent}%`;
+        
+            missionProgress.textContent = `${activeMission.progress} / ${activeMission.goal}`;
+        }
+        
+        function updateMission(type, amount = 1, symbol = null) {
+            if (!activeMission) return;
+            if (activeMission.progress >= activeMission.goal) return;
+        
+            if (activeMission.type === MISSION_SCORE && type === MISSION_SCORE) {
+                activeMission.progress = Math.min(activeMission.goal, score);
+            }
+        
+            if (
+                activeMission.type === MISSION_MATCH_SYMBOL &&
+                type === MISSION_MATCH_SYMBOL &&
+                activeMission.symbol === symbol
+            ) {
+                activeMission.progress = Math.min(
+                    activeMission.goal,
+                    activeMission.progress + amount
+                );
+            }
+        
+            if (
+                activeMission.type === MISSION_CREATE_POWER &&
+                type === MISSION_CREATE_POWER
+            ) {
+                activeMission.progress = Math.min(
+                    activeMission.goal,
+                    activeMission.progress + amount
+                );
+            }
+        
+            renderMission();
+            if (activeMission.progress >= activeMission.goal) {
+                completeMission();
+            }
+        }
+        
+        function completeMission() {
+            if (!activeMission || activeMission.completed) return;
+        
+            activeMission.completed = true;
+        
+            window.VetsRush.addReward('heroCoins', activeMission.reward);
+        
+            showFloatingScore(`MISSION +${activeMission.reward}`);
+        
+            setTimeout(() => {
+                generateMission();
+            }, 900);
+        }
         
         // Initialize game
         function initGame() {
+            document.addEventListener('pointerdown', getHeroCrushAudioCtx, { once: true });
+            
             initTailwind();
-            loadGameState();
+            loadHeroCrushState();
             
             createGrid();
             renderGrid();
+            generateMission();
             
             // Update moves display
             document.getElementById('moves-left').textContent = movesLeft;
@@ -652,7 +2201,7 @@
             });
             
             // Auto-save every 10 seconds
-            setInterval(saveGameState, 10000);
+            setInterval(saveHeroCrushState, 10000);
             
             // Welcome message
             setTimeout(() => {

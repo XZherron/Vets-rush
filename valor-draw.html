@@ -5,7 +5,6 @@
     <title>VALOR DRAW • VETS RUSH</title>  
     <script src="https://cdn.tailwindcss.com"></script>  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">  
-    <script src="game-state.js"></script>  
     <style>  
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap');  body {  
         font-family: 'Inter', system-ui, sans-serif;  
@@ -105,22 +104,6 @@
     </div>  
 </div>  
 
-<!-- User Bar -->  
-<div class="px-4 py-3 bg-slate-900 flex items-center justify-between border-b border-slate-700">  
-    <div class="flex items-center gap-x-3">  
-        <div class="emoji-logo" style="font-size: 2.2rem;">&#x1FA99;</div>  
-        <div>  
-            <div class="font-bold" id="player-name">PatriotVet69</div>  
-            <div class="text-xs text-slate-400">LVL 14 • Rank #8,472</div>  
-        </div>  
-    </div>  
-      
-    <div class="text-right">  
-        <div class="font-mono text-xl font-bold text-yellow-400" id="hero-coins">3,277,350</div>  
-        <div class="text-[10px] text-slate-400">HERO COINS</div>  
-    </div>  
-</div>  
-
 <!-- Valor Chips -->  
 <div class="px-4 py-2 bg-slate-900 flex justify-center border-b border-slate-700">  
     <div class="bg-purple-600 px-6 py-1.5 rounded-2xl flex items-center gap-x-2">  
@@ -169,21 +152,20 @@
     </div>  
 </div>  
 
+<script src="game-state.js"></script>
 <script>  
     // ORIGINAL WORKING CODE - CLEANED UP  
     let pokerHand = [];  
     let heldCards = [false, false, false, false, false];  
     let gamePhase = 'deal';  
 
-    function dealHand() {  
-        if (gameState.valor < 1) {  
-            alert("You need at least 1 Valor Chip to play!");  
-            return;  
-        }  
-          
-        gameState.valor--;  
-        saveGameState();  
-        updateUI();  
+    function dealHand() {
+        if (!window.VetsRush.spend('valor', 1)) {
+            alert("You need at least 1 Valor Chip to play!");
+            return;
+        }
+    
+        updateValorDrawUI();
           
         pokerHand = [];  
 		heldCards = [false, false, false, false, false];  
@@ -338,6 +320,7 @@
       
         resultArea.classList.remove('hidden');  
         rewardDiv.innerHTML = '';  
+        resultSub.innerHTML = '';
       
         if (winAmount > 0) {  
             const payouts = {  
@@ -362,13 +345,11 @@
       
                 if (payout.items > 0) {  
                     const itemPool = ['flags', 'helmets', 'homes', 'beds'];  
-                    const itemNames = { flags: 'Flags', helmets: 'Helmets', homes: 'Homes', beds: 'Beds' };  
                       
                     for (let i = 0; i < payout.items; i++) {  
                         const randomItem = itemPool[Math.floor(Math.random() * itemPool.length)];  
                         window.VetsRush.addReward(randomItem, 1);  
                           
-                        const itemLabel = itemNames[randomItem] || randomItem;  
                         const itemDiv = document.createElement('div');  
                         itemDiv.className = 'bg-emerald-900 px-3 py-1 rounded-full text-xs flex items-center gap-x-1 whitespace-nowrap';  
                         const emojiMap = {
@@ -385,7 +366,8 @@
                     }  
                 }  
             }  
-      
+            
+            updateValorDrawUI();
             resultText.innerHTML = getHandName(winAmount) + '!';  
             resultText.className = 'text-2xl font-bold text-emerald-400 mb-1';  
       
@@ -440,41 +422,32 @@
     }  
 
     function returnToBase() {
-	    if (window.VetsRush && typeof window.VetsRush.saveGame === 'function') {
-	        window.VetsRush.saveGame();
-	    } else if (typeof saveGameState === 'function') {
-	        saveGameState();
-	    }
+        window.VetsRush.saveGame();
+        window.location.href = 'index.html';
+    }
 	
-	    window.location.href = 'index.html';
-	}
+	function updateValorDrawUI() {
+        const inv = window.VetsRush.getInventory();
+    
+        const heroCoinsEl = document.getElementById('hero-coins');
+        if (heroCoinsEl) {
+            heroCoinsEl.innerText = (inv.heroCoins || 0).toLocaleString();
+        }
+    
+        const valorEl = document.getElementById('valor-chips');
+        if (valorEl) {
+            valorEl.innerText = inv.valor || 0;
+        }
+    
+        if (window.VetsRush && typeof window.VetsRush.updateUI === 'function') {
+            window.VetsRush.updateUI();
+        }
+    }
 
-    let gameState = {  
-        heroCoins: 0,  
-        valor: 0,  
-        stars: 0,  
-        medals: 0  
-    };  
-      
-    function loadGameState() {  
-        const saved = localStorage.getItem('vetsRushGameState');  
-        if (saved) gameState = JSON.parse(saved);  
-        document.getElementById('hero-coins').innerText = gameState.heroCoins.toLocaleString();  
-        document.getElementById('valor-chips').innerText = gameState.valor || 0;  
-    }  
-      
-    function saveGameState() {  
-        localStorage.setItem('vetsRushGameState', JSON.stringify(gameState));  
-    }  
-      
-    function updateUI() {  
-        document.getElementById('hero-coins').innerText = gameState.heroCoins.toLocaleString();  
-        document.getElementById('valor-chips').innerText = gameState.valor || 0;  
-    }  
-
-    function initGame() {  
-        loadGameState();  
-        const container = document.getElementById('cards-container');  
+    function initGame() {
+        updateValorDrawUI();
+    
+        const container = document.getElementById('cards-container');
         container.innerHTML = `  
             <div class="text-center py-8 text-slate-500 w-full">  
                 <i class="fa-solid fa-dice text-4xl mb-3"></i>  
