@@ -79,7 +79,7 @@
                         <div class="mt-4 flex items-center justify-between">
                             <div class="flex items-center gap-x-2 text-emerald-400">
                                 <span class="emoji-logo" style="font-size: 1.6rem;">&#x1F6E1;&#xFE0F;</span>
-                                <span id="cost-extraLife" class="font-mono text-xl font-bold">8  + 1.5K </span>
+                                <span id="cost-extraLife" class="font-mono text-xl font-bold">8 🪙🪙 + 1.5K 🪙</span>
                             </div>
                             <button id="btn-extraLife" onclick="buyUpgrade('extraLife', 'Extra Life')"
                                     class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-2xl font-bold text-sm">BUY</button>
@@ -101,7 +101,7 @@
                         <div class="mt-4 flex items-center justify-between">
                             <div class="flex items-center gap-x-2 text-emerald-400">
                                 <span class="emoji-logo" style="font-size: 1.6rem;">&#x1F6E1;&#xFE0F;</span>
-                                <span id="cost-shieldDuration" class="font-mono text-xl font-bold">6  + 1K </span>
+                                <span id="cost-shieldDuration" class="font-mono text-xl font-bold">6 🪙🪙 + 1K 🪙</span>
                             </div>
                             <button id="btn-shieldDuration" onclick="buyUpgrade('shieldDuration', 'Shield Duration')"
                                     class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-2xl font-bold text-sm">BUY</button>
@@ -123,7 +123,7 @@
                         <div class="mt-4 flex items-center justify-between">
                             <div class="flex items-center gap-x-2 text-emerald-400">
                                 <span class="emoji-logo" style="font-size: 1.6rem;">&#x1F6E1;&#xFE0F;</span>
-                                <span id="cost-reinforcedShield" class="font-mono text-xl font-bold">10  + 1.25K </span>
+                                <span id="cost-reinforcedShield" class="font-mono text-xl font-bold">10 🪙🪙 + 1.25K 🪙</span>
                             </div>
                             <button id="btn-reinforcedShield" onclick="buyUpgrade('reinforcedShield', 'Reinforced Shield')"
                                     class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-2xl font-bold text-sm">BUY</button>
@@ -142,7 +142,7 @@
         <!-- VALOR EXCHANGE - START -->
         <div class="mt-8 bg-slate-900 border border-slate-700 rounded-3xl p-6">
             <div class="text-center mb-5">
-                <div class="text-4xl mb-2"></div>
+                <div class="text-4xl mb-2">🪙</div>
                 <div class="text-2xl font-bold text-amber-400">Valor Exchange</div>
                 <div class="text-sm text-slate-400 mt-1">
                     Trade Hero Coins for Valor Chips to spin Valor Slots
@@ -159,7 +159,7 @@
         
                         <button onclick="buyValorBundle(500, 5, '5 Valor Chips')"
                                 class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl">
-                            500 
+                            500 🪙
                         </button>
                     </div>
                 </div>
@@ -173,7 +173,7 @@
         
                         <button onclick="buyValorBundle(1000, 12, '12 Valor Chips')"
                                 class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl">
-                            1,000 
+                            1,000 🪙
                         </button>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
         
                         <button onclick="buyValorBundle(2500, 35, '35 Valor Chips')"
                                 class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl">
-                            2,500 
+                            2,500 🪙
                         </button>
                     </div>
                 </div>
@@ -250,7 +250,7 @@
         
             setText(
                 costId,
-                `${cost.shields}  + ${formatNumber(cost.heroCoins)} `
+                `${cost.shields} Shields + ${formatNumber(cost.heroCoins)} Hero Coins`
             );
         
             if (btn) {
@@ -297,7 +297,7 @@
             btns.forEach(b => b.style.transform = 'scale(0.95)');
             setTimeout(() => btns.forEach(b => b.style.transform = ''), 120);
         
-            alert(` ${name} upgraded! Your Eagle is now stronger.`);
+            alert(`${name} upgraded! Your Eagle is now stronger.`);
         }
         
         function buyValorBundle(cost, amount, name) {
@@ -310,7 +310,7 @@
         
             updateStoreUI();
         
-            alert(` ${name} purchased!`);
+            alert(`${name} purchased!`);
         }
         
         function exitToBase() {

@@ -154,12 +154,14 @@ function normalizeGameState(state) {
     'homes',
     'beds'
   ].forEach(key => {
-    merged[key] = Number(merged[key]) || 0;
+    const value = Number(merged[key]);
+    merged[key] = Number.isFinite(value) ? Math.max(0, value) : 0;
   });
 
   // Make sure jackpot values are numbers.
   Object.keys(DEFAULT_STATE.jackpot).forEach(key => {
-    merged.jackpot[key] = Number(merged.jackpot[key]) || 0;
+    const value = Number(merged.jackpot[key]);
+    merged.jackpot[key] = Number.isFinite(value) ? Math.max(0, value) : 0;
   });
 
   // Sync legacy flat upgrade values with the nested upgrade object.
@@ -175,26 +177,23 @@ function normalizeGameState(state) {
 }
 
 function loadGame() {
-  let saved = localStorage.getItem(VETS_RUSH_SAVE_KEY);
-
-  // One-time migration from older project keys.
-  if (!saved) {
-    for (const oldKey of VETS_RUSH_OLD_KEYS) {
-      const oldSave = localStorage.getItem(oldKey);
-      if (oldSave) {
-        saved = oldSave;
-        break;
-      }
-    }
-  }
-
-  if (saved) {
+  // Check each copy independently; a damaged primary must not hide a good mirror.
+  for (const key of [VETS_RUSH_SAVE_KEY, ...VETS_RUSH_OLD_KEYS]) {
+    const saved = localStorage.getItem(key);
+    if (!saved) continue;
     try {
-      const loaded = normalizeGameState(JSON.parse(saved));
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('Save must be an object');
+      }
+      const loaded = normalizeGameState(parsed);
       saveGame(loaded);
       return loaded;
     } catch (error) {
-      console.warn('VETS RUSH save was corrupted. Starting fresh.', error);
+      // Retain the original bytes before any future save can replace this copy.
+      const recoveryKey = key + ':recovery';
+      if (!localStorage.getItem(recoveryKey)) localStorage.setItem(recoveryKey, saved);
+      console.warn('VETS RUSH could not load ' + key + '. Checking the next copy.', error);
     }
   }
 
@@ -325,6 +324,8 @@ function addReward(type, amount) {
   const key = keyMap[type] || type;
   const value = Number(amount) || 0;
 
+  if (!Object.prototype.hasOwnProperty.call(DEFAULT_STATE.jackpot, key) || !Number.isFinite(value) || value < 0) return false;
+
   if (typeof game[key] !== 'number') {
     game[key] = 0;
   }
@@ -349,6 +350,8 @@ function spend(type, amount) {
 
   const key = keyMap[type] || type;
   const cost = Number(amount) || 0;
+
+  if (!Object.prototype.hasOwnProperty.call(DEFAULT_STATE.jackpot, key) || !Number.isFinite(cost) || cost <= 0) return false;
 
   if ((game[key] || 0) >= cost) {
     game[key] -= cost;
