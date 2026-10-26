@@ -568,6 +568,18 @@
         let joystickY = 0;
         let joystickRadius = 70;
         
+        const movementKeys = new Set();
+
+        function resetControls() {
+            movementKeys.clear();
+            joystickActive = false;
+            joystickTouchId = null;
+            joystickX = joystickY = 0;
+            fireButtonPressed = false;
+            const knob = document.getElementById('joystick-knob');
+            knob.style.left = knob.style.top = '50%';
+        }
+
         let fireButtonPressed = false;
         let specialButtonPressed = false;
         
@@ -878,7 +890,7 @@
         
                 if (unlockedSpecials[next]) {
                     currentSpecial = next;
-                    document.getElementById('weapon-icon').textContent = specialIcons[currentSpecial];
+                    showPowerMessage(`${specialNames[currentSpecial]} SELECTED`);
                     return;
                 }
             }
@@ -1088,8 +1100,15 @@
             frame++;
             
             const moveSpeed = player.speed * (rapidFireEndTime > Date.now() ? 1.25 : 1);
-            player.x += joystickX * moveSpeed;
-            player.y += joystickY * moveSpeed;
+            const held = (...keys) => keys.some(key => movementKeys.has(key));
+            const keyboardX = Number(held('KeyD', 'ArrowRight')) - Number(held('KeyA', 'ArrowLeft'));
+            const keyboardY = Number(held('KeyS', 'ArrowDown')) - Number(held('KeyW', 'ArrowUp'));
+            const keyboardLength = Math.hypot(keyboardX, keyboardY) || 1;
+            const moveX = joystickX + keyboardX / keyboardLength;
+            const moveY = joystickY + keyboardY / keyboardLength;
+            const moveLength = Math.max(1, Math.hypot(moveX, moveY));
+            player.x += moveX / moveLength * moveSpeed;
+            player.y += moveY / moveLength * moveSpeed;
             player.x = Math.max(player.width/2, Math.min(WIDTH - player.width/2, player.x));
             player.y = Math.max(player.height/2, Math.min(HEIGHT - player.height/2, player.y));
             
@@ -2124,13 +2143,28 @@
                 if (gameState === 'playing') fireSpecialByType(2);
             });
             
+            const movementCodes = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD',
+                'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight']);
             window.addEventListener('keydown', (e) => {
+                if (e.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+                if (movementCodes.has(e.code) && gameState === 'playing') {
+                    e.preventDefault();
+                    movementKeys.add(e.code);
+                }
                 if (e.key === ' ' && gameState === 'playing') { e.preventDefault(); fireButtonPressed = true; fireWeapon(); }
                 if (e.key.toLowerCase() === 'q' && gameState === 'playing') {
                     cycleSpecial();
                 }
             });
-            window.addEventListener('keyup', (e) => { if (e.key === ' ') fireButtonPressed = false; });
+            window.addEventListener('keyup', (e) => {
+                movementKeys.delete(e.code);
+                if (e.key === ' ') fireButtonPressed = false;
+            });
+            window.addEventListener('blur', resetControls);
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) resetControls();
+            });
+            document.addEventListener('touchcancel', resetControls);
         }
         
         function resizeCanvas() {
@@ -2171,6 +2205,7 @@
         }
         
         function startGame(missionIndex) {
+            resetControls();
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('mission-screen').style.display = 'none';
             document.getElementById('game-over-screen').style.display = 'none';
@@ -2250,6 +2285,7 @@
         }
         
         function endGame(won = false) {
+            resetControls();
             gameState = 'gameover';
             document.getElementById('final-score').textContent = score.toString().padStart(6, '0');
             document.getElementById('final-stats').textContent = `${wave.toString().padStart(2, '0')} • ${(currentMission + 1).toString().padStart(2, '0')}`;
@@ -2274,6 +2310,7 @@
         }
         
         function showMissionSelect() {
+            resetControls();
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-over-screen').style.display = 'none';
             document.getElementById('mission-screen').style.display = 'flex';
@@ -2281,6 +2318,7 @@
         }
         
         function showStartScreen() {
+            resetControls();
             document.getElementById('mission-screen').style.display = 'none';
             document.getElementById('start-screen').style.display = 'flex';
             gameState = 'start';
